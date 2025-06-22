@@ -2,9 +2,8 @@ const express = require('express');
 const cors = require('cors');
 const swaggerJsdoc = require('swagger-jsdoc');
 const swaggerUi = require('swagger-ui-express');
-require('./database'); // Initializes database connection and tables
+const { sequelize } = require('./models');
 
-const bookingRoutes = require('./routes/booking');
 // Swagger definition
 const swaggerDefinition = {
   openapi: '3.0.0',
@@ -32,8 +31,17 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.use(cors());
 app.use(express.json()); // for parsing application/json
 
+// Sync Sequelize models
+sequelize.sync();
+
 // API Routes
+const bookingRoutes = require('./routes/bookingRoutes');
+const customerRoutes = require('./routes/customerRoutes');
+const airconSpecRoutes = require('./routes/airconSpecRoutes');
+
 app.use('/api/bookings', bookingRoutes);
+app.use('/api/customers', customerRoutes);
+app.use('/api/aircon-specs', airconSpecRoutes);
 
 // Root endpoint
 app.get('/', (req, res) => {

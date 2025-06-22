@@ -1,0 +1,77 @@
+version: '3.8'
+
+services:
+  # 백엔드 API 서버
+  backend:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: mission-clean-backend
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+    volumes:
+      - ./server/mission_clean.sqlite:/app/mission_clean.sqlite
+    networks:
+      - mission-clean-network
+    depends_on:
+      - db
+
+  # 프론트엔드 서버
+  frontend:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    container_name: mission-clean-frontend
+    restart: unless-stopped
+    networks:
+      - mission-clean-network
+
+  # Nginx 리버스 프록시 (HTTPS 터미네이션)
+  nginx:
+    image: nginx:alpine
+    container_name: mission-clean-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./certbot/conf:/etc/letsencrypt:ro
+      - ./certbot/www:/var/www/certbot:ro
+    depends_on:
+      - backend
+      - frontend
+    networks:
+      - mission-clean-network
+
+  # Let's Encrypt SSL 인증서 관리
+  certbot:
+    image: certbot/certbot
+    container_name: mission-clean-certbot
+    restart: unless-stopped
+    volumes:
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
+    command: certonly --webroot -w /var/www/certbot --force-renewal --email your-email@example.com --agree-tos --no-eff-email -d aircleankorea.com -d www.aircleankorea.com
+    networks:
+      - mission-clean-network
+
+  # SQLite는 파일 기반이므로 별도 DB 컨테이너 불필요
+  # 하지만 추후 PostgreSQL 등으로 업그레이드할 경우를 위한 플레이스홀더
+  db:
+    image: alpine:latest
+    container_name: mission-clean-db-placeholder
+    command: ["sh", "-c", "echo 'SQLite DB placeholder' && sleep infinity"]
+    networks:
+      - mission-clean-network
+
+networks:
+  mission-clean-network:
+    driver: bridge
+
+volumes:
+  certbot-conf:
+  certbot-www: 

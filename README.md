@@ -9,70 +9,96 @@
 ```
 mission-clean-app/
 ├── client/     # React 기반 프론트엔드 애플리케이션
-└── server/     # Node.js 기반 백엔드 API 서버
+└── server/     # Node.js + Express + Sequelize 기반 백엔드 API 서버
 ```
 
 ## ✨ 주요 기술 스택
 
 ### Client (프론트엔드)
-- **Framework/Library**: React
+- **Framework**: React
 - **Build Tool**: Vite
 - **Language**: TypeScript
 - **HTTP Client**: Axios
-- **Routing**: React Router DOM
+- **Styling**: Tailwind CSS
 
 ### Server (백엔드)
 - **Framework**: Node.js, Express.js
-- **Database**: SQLite
-- **CORS Middleware**: cors
+- **ORM**: Sequelize
+- **Database**: SQLite (`mission_clean.sqlite`)
+- **Swagger**: swagger-ui-express, swagger-jsdoc
+- **Middleware**: cors, body-parser
 
 ## 🚀 시작하기
 
-이 프로젝트를 로컬 환경에서 실행하려면 아래의 단계를 따라주세요.
-
 ### 사전 준비 사항
 
-- [Node.js](https://nodejs.org/) (v18 이상 권장)
-- [npm](https://www.npmjs.com/)
+- Node.js (v14 이상 권장)
+- npm
 
 ### 1. 서버 실행하기
-
-백엔드 서버를 먼저 실행합니다.
-
 ```bash
-# 1. server 디렉토리로 이동
+# server 디렉토리로 이동
 cd server
 
-# 2. 필요한 패키지 설치
-# 참고: package.json에 명시되지 않은 필수 패키지들이 있습니다.
-npm install express cors sqlite3 nodemon
-
-# 3. 서버 시작 (nodemon을 통해 실행)
-npm start
-```
-
-서버는 `http://localhost:3001`에서 실행됩니다. 서버가 실행되면 `mission_clean.db` 파일과 함께 필요한 테이블이 자동으로 생성됩니다.
-
-### 2. 클라이언트 실행하기
-
-프론트엔드 개발 서버를 실행합니다.
-
-```bash
-# 1. client 디렉토리로 이동
-cd client
-
-# 2. 필요한 패키지 설치
+# 1) 패키지 설치
 npm install
 
-# 3. 개발 서버 시작
+# 2) 서버 시작
+npm start
+```
+서버는 `http://localhost:3001`에서 실행되며, Swagger 문서는 `http://localhost:3001/api-docs`에서 확인할 수 있습니다.
+
+### 2. 클라이언트 실행하기
+```bash
+# client 디렉토리로 이동
+cd client
+
+# 패키지 설치
+npm install
+
+# 개발 서버 시작
 npm run dev
 ```
+Vite 개발 서버가 안내하는 주소(예: `http://localhost:5173`)로 접속하여 확인할 수 있습니다.
 
-vite 개발 서버가 안내하는 주소(예: `http://localhost:5173`)로 접속하여 확인할 수 있습니다.
+### Sequelize ORM 사용법
+- 설정 파일: `server/config/config.js`에서 개발/테스트/프로덕션 환경별 데이터베이스 경로 정의
+- 모델 정의: `server/models/` 디렉토리 내 각 모델(Booting.js, Customer.js, AirconSpec.js)에 컬럼 및 관계를 선언
+- 데이터베이스 연결 및 동기화: `server/models/index.js`에서 `sequelize.sync()`를 호출하여 테이블을 자동 생성/업데이트
+- 예시 코드:
+  ```js
+  const { Booking } = require('./models');
+  // 모든 예약 조회
+  const bookings = await Booking.findAll();
+
+  // 신규 예약 생성
+  const newBooking = await Booking.create({
+    customer_name: '홍길동',
+    customer_phone: '010-1234-5678',
+    customer_address: '대전광역시 중구',
+    service_date: '2025-07-01',
+    service_time: '10:00',
+    service_type: 'basic'
+  });
+  ```
 
 ## 📝 API 엔드포인트
 
-현재 구현된 API 엔드포인트 목록입니다. (현재는 실제 데이터베이스 로직 없이 임시 응답을 반환합니다.)
+### Swagger
+- `GET /api-docs` : API 문서 UI
 
-- `GET /api/bookings`: 모든 예약 목록 조회
-- `POST /api/bookings`: 신규 예약 생성 
+### Bookings
+- `GET /api/bookings` : 모든 예약 조회
+- `POST /api/bookings` : 신규 예약 생성 (중복 방지)
+- `PUT /api/bookings/:id/status` : 예약 상태 업데이트
+
+### Customers
+- `POST /api/customers` : 고객 정보 생성/업데이트 (Upsert)
+
+### Aircon Specs
+- `GET /api/aircon-specs` : 모든 에어컨 스펙 조회
+- `GET /api/aircon-specs/:modelName` : 모델명으로 스펙 조회
+
+```json
+// 예시 요청 및 응답 형식은 Swagger 문서를 참고하세요.
+```

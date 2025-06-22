@@ -1,0 +1,48 @@
+# 의존성 폴더
+node_modules
+npm-debug.log*
+
+# 로그 파일
+*.log
+
+# Git 정보
+.git
+.gitignore
+
+# 개발 도구 설정
+.vscode
+.idea
+
+# 환경 파일
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# 빌드 디렉토리
+dist
+build
+
+# 임시 파일
+*.tmp
+*.temp
+
+# 테스트 파일
+*.test.js
+*.spec.js
+__tests__
+
+# Docker 관련
+Dockerfile
+docker-compose*.yml
+.dockerignore
+
+# 문서
+README.md
+docs/
+
+# 백업 파일
+*.bak
+*.swp
+*.swo 
