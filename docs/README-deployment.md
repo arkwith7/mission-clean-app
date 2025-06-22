@@ -39,7 +39,7 @@ cd mission-clean-app
 
 # 환경 변수 설정
 export DOMAIN=aircleankorea.com
-export EMAIL=your-email@example.com
+export EMAIL=arkwith7@gmail.com
 ```
 
 ### 3. 자동 배포 실행
