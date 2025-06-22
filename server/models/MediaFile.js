@@ -19,10 +19,17 @@ module.exports = (sequelize) => {
   });
 
   MediaFile.associate = (models) => {
-    MediaFile.belongsTo(models.User, { foreignKey: 'uploaded_by', as: 'uploader' });
-    MediaFile.hasMany(models.WorkGallery, { foreignKey: 'before_image_id', as: 'workBeforeImages' });
-    MediaFile.hasMany(models.WorkGallery, { foreignKey: 'after_image_id', as: 'workAfterImages' });
-    MediaFile.hasMany(models.WorkGallery, { foreignKey: 'work_video_id', as: 'workVideos' });
+    // User 모델과의 관계 설정 (안전한 확인 후)
+    if (models.User) {
+      MediaFile.belongsTo(models.User, { foreignKey: 'uploaded_by', as: 'uploader' });
+    }
+    
+    // WorkGallery 모델이 생성되면 아래 주석을 해제하세요
+    // if (models.WorkGallery) {
+    //   MediaFile.hasMany(models.WorkGallery, { foreignKey: 'before_image_id', as: 'workBeforeImages' });
+    //   MediaFile.hasMany(models.WorkGallery, { foreignKey: 'after_image_id', as: 'workAfterImages' });
+    //   MediaFile.hasMany(models.WorkGallery, { foreignKey: 'work_video_id', as: 'workVideos' });
+    // }
   };
 
   return MediaFile;
