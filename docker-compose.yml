@@ -11,6 +11,8 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=3001
+    env_file:
+      - .env
     volumes:
       - ./server/mission_clean.sqlite:/app/mission_clean.sqlite
     networks:
@@ -34,6 +36,8 @@ services:
       dockerfile: Dockerfile
     container_name: mission-clean-frontend
     restart: unless-stopped
+    env_file:
+      - .env
     networks:
       - mission-clean-network
     depends_on:
@@ -49,6 +53,8 @@ services:
     image: nginx:alpine
     container_name: mission-clean-nginx
     restart: unless-stopped
+    env_file:
+      - .env
     ports:
       - "80:80"
       - "443:443"
@@ -74,6 +80,8 @@ services:
   certbot:
     image: certbot/certbot
     container_name: mission-clean-certbot
+    env_file:
+      - .env
     volumes:
       - certbot-conf:/etc/letsencrypt
       - certbot-www:/var/www/certbot
@@ -94,7 +102,3 @@ volumes:
     driver: local
   certbot-www:
     driver: local
-
-# 환경 변수 파일 로드
-env_file:
-  - .env
