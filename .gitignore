@@ -28,6 +28,10 @@ lerna-debug.log*
 .env.production
 !.env.example
 
+# Docker and deployment related
+certbot/
+backups/
+
 # Editor directories and files
 .idea/
 .vscode/

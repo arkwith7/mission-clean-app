@@ -1,11 +1,19 @@
 #!/bin/bash
 
 # 데이터 백업 스크립트
-BACKUP_DIR="/backup/mission-clean"
+echo "💾 데이터 백업을 시작합니다..."
+
+# 스크립트가 위치한 디렉토리의 상위 디렉토리로 이동 (프로젝트 루트)
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+cd "$PROJECT_ROOT"
+
+echo "📍 프로젝트 루트: $PROJECT_ROOT"
+
+# 백업 디렉토리 설정
+BACKUP_DIR="$PROJECT_ROOT/backups"
 DATE=$(date +%Y%m%d_%H%M%S)
 BACKUP_FILE="mission_clean_backup_$DATE.tar.gz"
-
-echo "💾 데이터 백업을 시작합니다..."
 
 # 백업 디렉토리 생성
 mkdir -p $BACKUP_DIR
