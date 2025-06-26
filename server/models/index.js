@@ -3,6 +3,14 @@ const path = require('path');
 const { Sequelize } = require('sequelize');
 const config = require('../config/config')[process.env.NODE_ENV || 'development'];
 
+// DB 디렉토리 존재 확인 및 생성
+if (config.dialect === 'sqlite') {
+  const dbDir = path.dirname(config.storage);
+  if (!fs.existsSync(dbDir)) {
+    fs.mkdirSync(dbDir, { recursive: true });
+  }
+}
+
 const sequelize = new Sequelize(config);
 const db = {};
 

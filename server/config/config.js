@@ -2,18 +2,18 @@ const path = require('path');
 
 module.exports = {
   development: {
+    storage: path.join(__dirname, '../db/mission_clean.sqlite'),
     dialect: 'sqlite',
-    storage: path.resolve(__dirname, '../mission_clean.sqlite'),
-    logging: false
+    logging: false,
   },
   test: {
+    storage: ':memory:',
     dialect: 'sqlite',
-    storage: path.resolve(__dirname, '../mission_clean_test.sqlite'),
-    logging: false
+    logging: false,
   },
   production: {
+    storage: process.env.DATABASE_URL || '/app/db/mission_clean.sqlite',
     dialect: 'sqlite',
-    storage: path.resolve(__dirname, '../mission_clean.sqlite'),
-    logging: false
-  }
+    logging: false,
+  },
 };
