@@ -2,18 +2,33 @@ const path = require('path');
 
 module.exports = {
   development: {
-    storage: path.join(__dirname, '../db/mission_clean.sqlite'),
-    dialect: 'sqlite',
+    username: process.env.DB_USER || 'postgres',
+    password: process.env.DB_PASSWORD || 'password',
+    database: process.env.DB_NAME || 'mission_clean_dev',
+    host: process.env.DB_HOST || 'localhost',
+    dialect: 'postgres',
     logging: false,
   },
   test: {
-    storage: ':memory:',
-    dialect: 'sqlite',
+    username: process.env.DB_USER || 'postgres',
+    password: process.env.DB_PASSWORD || 'password',
+    database: process.env.DB_NAME || 'mission_clean_test',
+    host: process.env.DB_HOST || 'localhost',
+    dialect: 'postgres',
     logging: false,
   },
   production: {
-    storage: process.env.DATABASE_URL || '/app/db/mission_clean.sqlite',
-    dialect: 'sqlite',
+    username: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME,
+    host: process.env.DB_HOST,
+    dialect: 'postgres',
     logging: false,
+    dialectOptions: {
+      ssl: {
+        require: true,
+        rejectUnauthorized: false
+      }
+    }
   },
 };
