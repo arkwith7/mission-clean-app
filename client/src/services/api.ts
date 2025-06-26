@@ -1,12 +1,23 @@
 import axios from 'axios'
 
-const API_BASE_URL = 'http://localhost:3001/api'
+const API_BASE_URL = import.meta.env.PROD 
+  ? '/api' 
+  : 'http://localhost:3001/api'
 
 const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
+})
+
+// 토큰을 API 요청에 자동으로 추가하는 인터셉터
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('authToken')
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`
+  }
+  return config
 })
 
 export interface BookingData {
@@ -25,6 +36,33 @@ export interface BookingResponse {
   data: BookingData
 }
 
+export interface User {
+  id: number
+  username: string
+  email: string
+  role: string
+}
+
+export interface AuthResponse {
+  success: boolean
+  message: string
+  data: {
+    token: string
+    user: User
+  }
+}
+
+export interface LoginData {
+  email: string
+  password: string
+}
+
+export interface RegisterData {
+  username: string
+  email: string
+  password: string
+}
+
 export interface Booking {
   id: number
   service_date: string
@@ -35,6 +73,32 @@ export interface Booking {
   customer_name: string
   customer_phone: string
   customer_address: string
+}
+
+export const authAPI = {
+  // 회원가입
+  register: async (data: RegisterData): Promise<AuthResponse> => {
+    const response = await api.post('/auth/register', data)
+    return response.data
+  },
+
+  // 로그인
+  login: async (data: LoginData): Promise<AuthResponse> => {
+    const response = await api.post('/auth/login', data)
+    return response.data
+  },
+
+  // 프로필 조회
+  getProfile: async (): Promise<{ success: boolean; data: { user: User } }> => {
+    const response = await api.get('/auth/profile')
+    return response.data
+  },
+
+  // 로그아웃
+  logout: async (): Promise<{ success: boolean; message: string }> => {
+    const response = await api.post('/auth/logout')
+    return response.data
+  },
 }
 
 export const bookingAPI = {

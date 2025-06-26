@@ -32,8 +32,24 @@ mission-clean-app/
 
 ### 사전 준비 사항
 
-- Node.js (v14 이상 권장)
+- Node.js (v18 이상 권장)
 - npm
+
+### 🔐 보안 설정 (필수)
+
+1. **환경 변수 설정**
+   ```bash
+   # .env 파일을 생성하고 다음 변수들을 설정하세요
+   cp env.example .env
+   ```
+
+2. **JWT_SECRET 설정**
+   - 최소 32자 이상의 강력한 랜덤 문자열로 설정
+   - 프로덕션에서는 절대 기본값을 사용하지 마세요
+
+3. **기본 패스워드 변경**
+   - 관리자 계정의 기본 패스워드를 즉시 변경하세요
+   - 환경 변수로 `DEFAULT_ADMIN_PASSWORD`, `DEFAULT_MANAGER_PASSWORD` 설정 가능
 
 ### 1. 서버 실행하기
 ```bash
@@ -101,4 +117,151 @@ Vite 개발 서버가 안내하는 주소(예: `http://localhost:5173`)로 접�
 
 ```json
 // 예시 요청 및 응답 형식은 Swagger 문서를 참고하세요.
+```
+
+## 🐳 프로덕션 배포
+
+### 배포 환경
+- **Domain**: aircleankorea.com
+- **HTTPS**: Let's Encrypt SSL 인증서
+- **Container**: Docker Compose
+- **Reverse Proxy**: Nginx
+- **Database**: SQLite (프로덕션 환경에서도 사용)
+
+### 1. 사전 준비
+```bash
+# Docker 및 Docker Compose 설치 확인
+docker --version
+docker-compose --version
+
+# 프로젝트 클론
+git clone <repository-url>
+cd mission-clean-app
+```
+
+### 2. 환경 설정
+```bash
+# 환경 파일 생성
+cp env.example .env
+
+# 필수 환경 변수 설정
+nano .env
+```
+
+**중요**: 다음 변수들을 반드시 수정하세요:
+- `JWT_SECRET`: 강력한 32자 이상의 랜덤 문자열
+- `EMAIL`: Let's Encrypt SSL 인증서 발급용 이메일
+
+### 3. 자동 배포 실행
+```bash
+# 배포 스크립트 실행 권한 부여
+chmod +x scripts/production-deploy.sh
+
+# 프로덕션 배포 실행
+./scripts/production-deploy.sh
+```
+
+### 4. 수동 배포 (선택사항)
+```bash
+# 1. 이미지 빌드
+docker-compose -f docker-compose.prod.yml build
+
+# 2. 서비스 시작
+docker-compose -f docker-compose.prod.yml up -d
+
+# 3. SSL 인증서 발급
+docker-compose -f docker-compose.prod.yml run --rm certbot certonly \
+  --webroot -w /var/www/certbot \
+  --email your-email@example.com \
+  --agree-tos --no-eff-email \
+  -d aircleankorea.com -d www.aircleankorea.com
+```
+
+### 5. 서비스 관리
+```bash
+# 서비스 상태 확인
+docker-compose -f docker-compose.prod.yml ps
+
+# 로그 확인
+docker-compose -f docker-compose.prod.yml logs -f
+
+# 서비스 재시작
+docker-compose -f docker-compose.prod.yml restart
+
+# 서비스 중지
+docker-compose -f docker-compose.prod.yml down
+```
+
+### 6. SSL 자동 갱신 설정
+```bash
+# Cron job 설정
+crontab -e
+
+# 다음 라인 추가 (매일 새벽 2시에 실행)
+0 2 * * * /path/to/mission-clean-app/scripts/ssl-renew.sh >> /var/log/ssl-renew.log 2>&1
+```
+
+### 7. 백업 설정
+```bash
+# 백업 스크립트 실행
+./scripts/backup.sh
+
+# 자동 백업 Cron job 설정 (매일 새벽 3시)
+0 3 * * * /path/to/mission-clean-app/scripts/backup.sh >> /var/log/backup.log 2>&1
+```
+
+### 8. 모니터링
+```bash
+# 컨테이너 리소스 사용량 확인
+docker stats
+
+# 디스크 사용량 확인
+df -h
+
+# 로그 파일 크기 확인
+du -sh nginx/logs/ server/logs/
+```
+
+## 🔧 유지보수
+
+### 로그 관리
+- **서버 로그**: `server/logs/`
+- **Nginx 로그**: `nginx/logs/`
+- **Docker 로그**: `docker-compose logs`
+
+### 데이터베이스 백업
+```bash
+# 수동 백업
+./scripts/backup.sh
+
+# 백업 파일 위치
+ls -la backups/
+```
+
+### 보안 업데이트
+```bash
+# 시스템 업데이트
+sudo apt update && sudo apt upgrade
+
+# Docker 이미지 업데이트
+docker-compose -f docker-compose.prod.yml pull
+docker-compose -f docker-compose.prod.yml up -d
+```
+
+## 🆘 문제 해결
+
+### 일반적인 문제
+1. **SSL 인증서 오류**: DNS 설정 확인
+2. **컨테이너 시작 실패**: 로그 확인 (`docker-compose logs`)
+3. **데이터베이스 연결 실패**: 파일 권한 및 경로 확인
+
+### 응급 복구
+```bash
+# 서비스 전체 재시작
+docker-compose -f docker-compose.prod.yml down
+docker-compose -f docker-compose.prod.yml up -d
+
+# 데이터베이스 복구
+tar xzf backups/backup_YYYYMMDD_HHMMSS.tar.gz -C backups/
+cp backups/backup_YYYYMMDD_HHMMSS/mission_clean.sqlite server/
 ```

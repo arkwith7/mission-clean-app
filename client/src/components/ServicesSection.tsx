@@ -1,11 +1,11 @@
 const ServicesSection = () => {
   const services = [
     {
-      title: "일반형 에어컨 청소",
+      title: "벽걸이형 에어컨 청소",
       price: "80,000원",
       originalPrice: "100,000원", 
       features: [
-        "실내기 완전 분해 청소",
+        "벽걸이형 실내기 완전 분해 청소",
         "필터 교체 및 청소",
         "드레인 청소",
         "기본 점검 서비스"
@@ -13,16 +13,40 @@ const ServicesSection = () => {
       icon: "🏠"
     },
     {
-      title: "시스템 에어컨 청소", 
+      title: "스탠드형 에어컨 청소",
+      price: "130,000원",
+      originalPrice: "160,000원", 
+      features: [
+        "스탠드형 실내기 완전 분해 청소",
+        "대형 필터 교체 및 청소",
+        "드레인 청소",
+        "정밀 점검 서비스"
+      ],
+      icon: "🏢"
+    },
+    {
+      title: "시스템 에어컨 1way 청소", 
       price: "120,000원",
       originalPrice: "150,000원",
       features: [
-        "시스템 에어컨 전용 청소",
+        "1way 시스템 에어컨 전용 청소",
         "덕트 청소 포함",
         "항균 코팅 서비스",
         "정밀 점검 및 AS"
       ],
-      icon: "🏢"
+      icon: "❄️"
+    },
+    {
+      title: "시스템 에어컨 천정형 4way 청소", 
+      price: "150,000원",
+      originalPrice: "180,000원",
+      features: [
+        "천정형 4way 시스템 에어컨 청소",
+        "4방향 덕트 청소 포함",
+        "항균 코팅 서비스",
+        "정밀 점검 및 AS"
+      ],
+      icon: "❄️"
     },
     {
       title: "실외기 청소",
@@ -73,7 +97,7 @@ const ServicesSection = () => {
         </div>
 
         {/* Service Cards */}
-        <div className="grid md:grid-cols-3 gap-8 mb-20">
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 mb-12">
           {services.map((service, index) => (
             <div key={index} className="bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 p-8 border border-cyan-100 hover:border-cyan-200 hover:-translate-y-2">
               <div className="text-center">
@@ -101,6 +125,21 @@ const ServicesSection = () => {
               </div>
             </div>
           ))}
+        </div>
+
+        {/* Multiple Unit Notice */}
+        <div className="bg-gradient-to-r from-orange-50 to-yellow-50 rounded-2xl p-8 mb-12 border border-orange-200">
+          <div className="text-center">
+            <h3 className="text-2xl font-bold text-orange-800 mb-4">
+              🏠 2대 이상 청소 시
+            </h3>
+            <p className="text-lg text-orange-700 mb-4">
+              에어컨 2대 이상 청소를 원하시는 경우 별도 상담을 통해 최적의 가격을 제안해드립니다.
+            </p>
+            <div className="bg-white rounded-lg p-4 inline-block shadow-sm">
+              <p className="text-orange-600 font-semibold">📞 상담 문의: 010-8282-8282</p>
+            </div>
+          </div>
         </div>
 
         {/* Daejeon Specialized Services */}

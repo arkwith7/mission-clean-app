@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <!-- 배경 원 -->
+  <circle cx="16" cy="16" r="15" fill="#0891b2" stroke="#0e7490" stroke-width="2"/>
+  
+  <!-- 에어컨 실내기 -->
+  <rect x="6" y="10" width="20" height="8" rx="2" fill="#ffffff"/>
+  <rect x="7" y="11" width="18" height="3" rx="1" fill="#e0f2fe"/>
+  
+  <!-- 에어컨 그릴 -->
+  <line x1="8" y1="15" x2="24" y2="15" stroke="#0891b2" stroke-width="0.5"/>
+  <line x1="8" y1="16" x2="24" y2="16" stroke="#0891b2" stroke-width="0.5"/>
+  <line x1="8" y1="17" x2="24" y2="17" stroke="#0891b2" stroke-width="0.5"/>
+  
+  <!-- 청소 효과 (반짝임) -->
+  <circle cx="10" cy="12" r="1" fill="#fbbf24" opacity="0.8"/>
+  <circle cx="22" cy="13" r="0.8" fill="#fbbf24" opacity="0.6"/>
+  <circle cx="14" cy="11.5" r="0.6" fill="#fbbf24" opacity="0.7"/>
+  
+  <!-- 바람 효과 -->
+  <path d="M 6 22 Q 10 20 14 22 Q 18 24 22 22 Q 26 20 30 22" 
+        stroke="#67e8f9" stroke-width="1.5" fill="none" opacity="0.7"/>
+  <path d="M 4 25 Q 8 23 12 25 Q 16 27 20 25 Q 24 23 28 25" 
+        stroke="#67e8f9" stroke-width="1" fill="none" opacity="0.5"/>
+</svg> 

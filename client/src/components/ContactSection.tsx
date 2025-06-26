@@ -51,7 +51,10 @@ const ContactSection = () => {
         preferredTime: ''
       })
     } catch (error) {
-      console.error('Booking error:', error)
+      // 프로덕션에서는 에러 로깅을 최소화
+      if (import.meta.env.DEV) {
+        console.error('Booking error:', error)
+      }
       alert('신청 중 오류가 발생했습니다. 전화로 연락 부탁드립니다: 010-9171-8465')
     } finally {
       setIsSubmitting(false)
@@ -215,10 +218,12 @@ const ContactSection = () => {
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
                   <option value="">서비스를 선택해주세요</option>
-                  <option value="일반형">일반형 에어컨 청소 (80,000원)</option>
-                  <option value="시스템">시스템 에어컨 청소 (120,000원)</option>
+                  <option value="벽걸이형">벽걸이형 에어컨 청소 (80,000원)</option>
+                  <option value="스탠드형">스탠드형 에어컨 청소 (130,000원)</option>
+                  <option value="시스템1way">시스템 에어컨 1way 청소 (120,000원)</option>
+                  <option value="시스템4way">시스템 에어컨 천정형 4way 청소 (150,000원)</option>
                   <option value="실외기">실외기 청소 (60,000원)</option>
-                  <option value="종합">종합 청소 패키지</option>
+                  <option value="2대이상">2대 이상 (상담 후 결정)</option>
                 </select>
               </div>
 

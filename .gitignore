@@ -5,19 +5,26 @@
 
 # Build output
 /client/dist
+/client/build
 
-# Database file from server
+# Database files
 /server/mission_clean.db
 /server/mission_clean.db-journal
+/server/mission_clean.sqlite
+/server/mission_clean.sqlite-journal
 
 # Log files
-logs
+logs/
 *.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
+
+# Server logs
+/server/logs/
+/nginx/logs/
 
 # Environment variables
 .env
@@ -27,10 +34,21 @@ lerna-debug.log*
 .env.test
 .env.production
 !.env.example
+!env.production
 
 # Docker and deployment related
 certbot/
 backups/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# SSL certificates (if stored locally)
+*.pem
+*.key
+*.crt
 
 # Editor directories and files
 .idea/
@@ -40,4 +58,18 @@ backups/
 *.ntvs*
 *.njsproj
 *.sln
-*.sw? 
+*.sw?
+
+# OS generated files
+Thumbs.db
+.directory
+
+# Test coverage
+coverage/
+.nyc_output/
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock 
