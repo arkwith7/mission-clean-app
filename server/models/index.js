@@ -11,7 +11,7 @@ if (config.dialect === 'sqlite') {
   }
 }
 
-const sequelize = new Sequelize(config);
+const sequelize = new Sequelize(config.database, config.username, config.password, config);
 const db = {};
 
 fs

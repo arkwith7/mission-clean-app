@@ -12,13 +12,13 @@ services:
     env_file:
       - .env
     volumes:
-      - ./server/db:/app/db
+      - ./server/mission_clean.sqlite:/app/mission_clean.sqlite
       - ./server/data:/app/data
       - ./server/logs:/app/logs
     networks:
       - mission-clean-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health", "||", "exit", "1"]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -36,26 +36,6 @@ services:
         reservations:
           memory: 512M
           cpus: '0.5'
-    depends_on:
-      db:
-        condition: service_healthy
-
-  # PostgreSQL 데이터베이스 서버
-  db:
-    image: postgres:14-alpine
-    container_name: mission-clean-db
-    restart: unless-stopped
-    env_file:
-      - .env
-    volumes:
-      - db-data:/var/lib/postgresql/data
-    networks:
-      - mission-clean-network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
 
   # 프론트엔드 서버
   frontend:
@@ -164,8 +144,6 @@ networks:
         - subnet: 172.20.0.0/16
 
 volumes:
-  db-data:
-    driver: local
   certbot-conf:
     driver: local
   certbot-www:
