@@ -119,108 +119,68 @@ Vite 개발 서버가 안내하는 주소(예: `http://localhost:5173`)로 접�
 // 예시 요청 및 응답 형식은 Swagger 문서를 참고하세요.
 ```
 
-## 🐳 프로덕션 배포
+## 🚀 운영환경 배포 가이드
 
-### 배포 환경
-- **Domain**: aircleankorea.com
-- **HTTPS**: Let's Encrypt SSL 인증서
-- **Container**: Docker Compose
-- **Reverse Proxy**: Nginx
-- **Database**: SQLite (프로덕션 환경에서도 사용)
+### 배포 전 준비사항
 
-### 1. 사전 준비
+1. **환경변수 설정**:
+   ```bash
+   # env.production 파일의 JWT_SECRET을 강력한 값으로 변경
+   # EMAIL 주소를 실제 관리자 이메일로 설정
+   ```
+
+2. **도메인 설정 확인**:
+   - DNS A 레코드: `aircleankorea.com` → 서버 IP
+   - DNS A 레코드: `www.aircleankorea.com` → 서버 IP
+
+### 배포 실행
+
 ```bash
-# Docker 및 Docker Compose 설치 확인
-docker --version
-docker-compose --version
-
-# 프로젝트 클론
+# 1. 저장소 클론 및 이동
 git clone <repository-url>
 cd mission-clean-app
+
+# 2. 환경변수 설정
+cp env.production .env.prod
+# .env.prod 파일에서 JWT_SECRET과 이메일 설정을 확인/수정
+
+# 3. 운영환경 배포 실행
+chmod +x deploy.sh
+./deploy.sh
 ```
 
-### 2. 환경 설정
+### 배포 후 확인사항
+
+1. **서비스 상태 확인**:
+   ```bash
+   docker-compose -f docker-compose.prod.yml ps
+   ```
+
+2. **로그 확인**:
+   ```bash
+   docker-compose -f docker-compose.prod.yml logs -f
+   ```
+
+3. **헬스체크**:
+   - https://aircleankorea.com/health
+   - https://aircleankorea.com/api-docs (개발 시에만)
+
+### SSL 인증서 자동 갱신
+
 ```bash
-# 환경 파일 생성
-cp env.example .env
-
-# 필수 환경 변수 설정
-nano .env
+# crontab에 추가 (매월 1일 2시에 실행)
+0 2 1 * * /path/to/mission-clean-app/scripts/ssl-renew.sh
 ```
 
-**중요**: 다음 변수들을 반드시 수정하세요:
-- `JWT_SECRET`: 강력한 32자 이상의 랜덤 문자열
-- `EMAIL`: Let's Encrypt SSL 인증서 발급용 이메일
+### 주요 변경사항
 
-### 3. 자동 배포 실행
-```bash
-# 배포 스크립트 실행 권한 부여
-chmod +x scripts/production-deploy.sh
-
-# 프로덕션 배포 실행
-./scripts/production-deploy.sh
-```
-
-### 4. 수동 배포 (선택사항)
-```bash
-# 1. 이미지 빌드
-docker-compose -f docker-compose.prod.yml build
-
-# 2. 서비스 시작
-docker-compose -f docker-compose.prod.yml up -d
-
-# 3. SSL 인증서 발급
-docker-compose -f docker-compose.prod.yml run --rm certbot certonly \
-  --webroot -w /var/www/certbot \
-  --email your-email@example.com \
-  --agree-tos --no-eff-email \
-  -d aircleankorea.com -d www.aircleankorea.com
-```
-
-### 5. 서비스 관리
-```bash
-# 서비스 상태 확인
-docker-compose -f docker-compose.prod.yml ps
-
-# 로그 확인
-docker-compose -f docker-compose.prod.yml logs -f
-
-# 서비스 재시작
-docker-compose -f docker-compose.prod.yml restart
-
-# 서비스 중지
-docker-compose -f docker-compose.prod.yml down
-```
-
-### 6. SSL 자동 갱신 설정
-```bash
-# Cron job 설정
-crontab -e
-
-# 다음 라인 추가 (매일 새벽 2시에 실행)
-0 2 * * * /path/to/mission-clean-app/scripts/ssl-renew.sh >> /var/log/ssl-renew.log 2>&1
-```
-
-### 7. 백업 설정
-```bash
-# 백업 스크립트 실행
-./scripts/backup.sh
-
-# 자동 백업 Cron job 설정 (매일 새벽 3시)
-0 3 * * * /path/to/mission-clean-app/scripts/backup.sh >> /var/log/backup.log 2>&1
-```
-
-### 8. 모니터링
-```bash
-# 컨테이너 리소스 사용량 확인
-docker stats
-
-# 디스크 사용량 확인
-df -h
-
-# 로그 파일 크기 확인
-du -sh nginx/logs/ server/logs/
-```
+- ✅ 도메인: `aircleankorea.com`으로 통일
+- ✅ nginx 설정: 올바른 도메인 적용
+- ✅ SSL 인증서: Let's Encrypt 자동 설정
+- ✅ 환경변수: 운영/개발 환경 분리
+- ✅ API 엔드포인트: 환경별 동적 설정
+- ✅ CORS 설정: 운영환경 보안 적용
+- ✅ Docker Compose: 운영환경 최적화
 
 ## 🔧 유지보수
 

@@ -4,17 +4,21 @@ Mission Clean 프로젝트의 운영 및 관리를 위한 스크립트 모음입
 
 ## 🚀 배포 스크립트
 
-### `production-deploy.sh`
-**완전한 프로덕션 배포 스크립트**
-- SSL 인증서 자동 획득 및 설정
-- aircleankorea.com 도메인 전용
-- Docker 컨테이너 빌드 및 실행
-- 백엔드 헬스체크 포함
-
+**주 배포 스크립트는 프로젝트 루트의 `deploy.sh`를 사용하세요:**
 ```bash
-# 사용법
-./scripts/production-deploy.sh
+# 운영환경 배포
+./deploy.sh
 ```
+
+## 🔧 SSL 인증서 관리 스크립트
+
+### `dummy_cert.sh`
+**임시 SSL 인증서 생성** (deploy.sh에서 자동 호출)
+- Let's Encrypt 인증서 발급 전 Nginx 시작용
+
+### `delete_dummy_cert.sh`
+**임시 SSL 인증서 삭제** (deploy.sh에서 자동 호출)
+- 실제 SSL 인증서 발급 전 정리
 
 ## 🔧 유지보수 스크립트
 
@@ -45,7 +49,7 @@ Mission Clean 프로젝트의 운영 및 관리를 위한 스크립트 모음입
 
 ## 📋 일반적인 워크플로우
 
-1. **초기 배포**: `./scripts/production-deploy.sh`
+1. **초기 배포**: `./deploy.sh` (프로젝트 루트)
 2. **정기 백업**: `./scripts/backup.sh` (주간 실행 권장)
 3. **SSL 갱신**: `./scripts/ssl-renew.sh` (월간 자동 실행)
 

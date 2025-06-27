@@ -22,7 +22,13 @@ const swaggerDefinition = {
     version: '1.0.0',
     description: 'API documentation for Mission Clean aircon cleaning service backend',
   },
-  servers: [{ url: `http://localhost:${PORT}` }],
+  servers: [
+    { 
+      url: process.env.NODE_ENV === 'production' 
+        ? `https://${process.env.DOMAIN || 'aircleankorea.com'}`
+        : `http://localhost:${PORT}` 
+    }
+  ],
   components: {
     securitySchemes: {
       bearerAuth: { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' },
@@ -52,7 +58,8 @@ const corsOptions = {
 };
 app.use(cors(corsOptions));
 
-if (process.env.NODE_ENV !== 'production') {
+// API 문서는 개발환경에서만 활성화 또는 환경변수로 제어
+if (process.env.NODE_ENV !== 'production' || process.env.SWAGGER_ENABLED === 'true') {
   app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 }
 
@@ -91,7 +98,7 @@ app.use((error, req, res, next) => {
 const main = async () => {
   try {
     logger.system('Mission Clean API 서버를 시작합니다...');
-    await sequelize.sync();
+    await sequelize.sync({ alter: true });
     logger.info('데이터베이스 동기화 완료.');
 
     if (process.env.NODE_ENV === 'production') {

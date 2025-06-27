@@ -27,7 +27,7 @@
 ├── 🐳 docker-compose.prod.yml     # 프로덕션 리소스 제한 설정
 ├── ⚙️ .env                        # 환경 변수 (env.example에서 복사)
 ├── 📜 scripts/
-│   ├── 🚀 production-deploy.sh    # ⭐ 새로운 통합 배포 스크립트
+│   ├── 🔧 SSL 인증서 관리 스크립트들
 │   ├── 🔒 ssl-renew.sh           # ⭐ 개선된 SSL 갱신 (자동 경로 감지)
 │   ├── 💾 backup.sh              # ⭐ 개선된 백업 (프로젝트 기반)
 │   ├── 📦 deploy.sh              # 기존 일반 배포 스크립트
@@ -86,11 +86,11 @@ ls -la .env
 
 ### 🎯 **새로운 통합 배포 스크립트**
 
-**✨ 2024년 업데이트**: 모든 배포 과정을 자동화한 새로운 `production-deploy.sh` 스크립트를 제공합니다.
+**✨ 2024년 업데이트**: 모든 배포 과정을 자동화한 `deploy.sh` 스크립트를 제공합니다.
 
 ```bash
-# 프로덕션 배포 스크립트 실행
-./scripts/production-deploy.sh
+# 프로덕션 배포 스크립트 실행 (프로젝트 루트에서)
+./deploy.sh
 ```
 
 #### **🔥 주요 특징:**
@@ -176,7 +176,7 @@ crontab -e
 0 2 * * * /home/arkwith/Dev/WEB_APPS/mission-clean-app/scripts/ssl-renew.sh >> /var/log/ssl-renew.log 2>&1
 ```
 
-**💡 팁**: production-deploy.sh 실행 시 자동으로 정확한 경로가 안내됩니다.
+**💡 팁**: deploy.sh 실행 시 자동으로 정확한 경로가 안내됩니다.
 
 ## 💾 **백업 설정**
 
@@ -376,7 +376,7 @@ Docker Compose에서 로그 크기가 자동으로 제한됩니다:
 ### 🚀 **배포 실행 체크리스트**
 - [ ] **프로젝트 클론**: `git clone <repository-url> mission-clean-app`
 - [ ] **환경 설정**: `.env` 파일에 실제 이메일 주소 설정
-- [ ] **⭐ 새로운 통합 배포**: `./scripts/production-deploy.sh` 실행
+- [ ] **⭐ 새로운 통합 배포**: `./deploy.sh` 실행
 - [ ] **배포 성공 확인**: HTTPS 접속 테스트
 - [ ] **서비스 URL 확인**:
   - [ ] https://aircleankorea.com (메인 사이트)
@@ -410,7 +410,7 @@ Docker Compose에서 로그 크기가 자동으로 제한됩니다:
 **📞 문제 발생 시**:
 1. 로그 확인: `docker-compose logs -f`
 2. 위의 트러블슈팅 섹션 참조
-3. 스크립트 재실행: `./scripts/production-deploy.sh`
+3. 스크립트 재실행: `./deploy.sh`
 
 **🔄 일상 관리**:
 - SSL 인증서는 자동으로 갱신됩니다

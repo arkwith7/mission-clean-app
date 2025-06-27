@@ -6,11 +6,12 @@ services:
       dockerfile: Dockerfile
     container_name: mission-clean-backend
     restart: unless-stopped
+    user: "1001:1001"
     environment:
       - NODE_ENV=production
       - PORT=3001
     env_file:
-      - .env
+      - env.production
     volumes:
       - ./server/mission_clean.sqlite:/app/mission_clean.sqlite
       - ./server/data:/app/data
@@ -45,7 +46,7 @@ services:
     container_name: mission-clean-frontend
     restart: unless-stopped
     env_file:
-      - .env
+      - env.production
     networks:
       - mission-clean-network
     depends_on:
@@ -77,7 +78,7 @@ services:
     container_name: mission-clean-nginx
     restart: unless-stopped
     env_file:
-      - .env
+      - env.production
     ports:
       - "80:80"
       - "443:443"
@@ -119,7 +120,7 @@ services:
     image: certbot/certbot
     container_name: mission-clean-certbot
     env_file:
-      - .env
+      - env.production
     volumes:
       - certbot-conf:/etc/letsencrypt
       - certbot-www:/var/www/certbot

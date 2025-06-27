@@ -22,12 +22,15 @@ mkdir -p "$BACKUP_DIR"
 
 echo "[$(date '+%Y-%m-%d %H:%M:%S')] 백업 디렉토리: $BACKUP_DIR"
 
-# 환경 변수 로드
-if [ -f ".env" ]; then
+# 환경 변수 로드 (운영환경 우선)
+if [ -f "env.production" ]; then
+    source env.production
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] ✅ env.production 파일 로드됨"
+elif [ -f ".env" ]; then
     source .env
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] ✅ .env 파일 로드됨"
 else
-    echo "[$(date '+%Y-%m-%d %H:%M:%S')] ⚠️ .env 파일을 찾을 수 없습니다."
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] ⚠️ 환경 설정 파일을 찾을 수 없습니다."
 fi
 
 # 데이터베이스 백업
@@ -41,10 +44,13 @@ fi
 
 # 설정 파일 백업
 echo "[$(date '+%Y-%m-%d %H:%M:%S')] ⚙️ 설정 파일 백업 중..."
+if [ -f "env.production" ]; then
+    cp "env.production" "$BACKUP_DIR/"
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] ✅ 운영환경 설정 백업 완료"
+fi
 if [ -f ".env" ]; then
-    # 민감한 정보 제거한 설정 파일 백업
     cp ".env" "$BACKUP_DIR/env_backup"
-    echo "[$(date '+%Y-%m-%d %H:%M:%S')] ✅ 환경 설정 백업 완료"
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] ✅ 개발환경 설정 백업 완료"
 fi
 
 if [ -f "docker-compose.prod.yml" ]; then

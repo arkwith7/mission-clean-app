@@ -1,42 +1,98 @@
 # 🗄️ Mission Clean 데이터베이스 설계
 
+이 문서는 '에어컨 청소 중개 플랫폼'의 서비스 시나리오를 기반으로 설계된 데이터베이스 스키마를 정의합니다. 각 테이블은 특정 역할(고객, 기사, 관리자)의 핵심 기능을 지원하도록 구성되었습니다.
+
+---
+
+## 🚀 구축 우선순위
+
+안정적이고 빠른 서비스 런칭을 위해 다음과 같이 구축 우선순위를 제안합니다. 고객이 서비스를 경험하는 핵심 플로우를 최우선으로 개발합니다.
+
+### **1순위: 고객 핵심 서비스 (MVP Core)**
+- **목표**: 고객이 회원가입부터 서비스 예약, 결제까지 완료할 수 있는 핵심 사이클을 구현합니다.
+- **관련 테이블**: `users`, `customers`, `services`, `bookings`, `booking_services`, `payments`
+- **주요 기능**:
+    - 이메일/소셜 회원가입 및 로그인
+    - 서비스 목록 조회 및 선택
+    - 원하는 날짜/시간에 서비스 예약
+    - 예약 정보 기반 결제 진행
+    - 내 예약 내역 확인
+
+### **2순위: 서비스 기사 핵심 기능**
+- **목표**: 배정된 기사가 작업을 확인하고 수행하며, 완료 보고까지 할 수 있는 기능을 구현합니다.
+- **관련 테이블**: `technicians`, `service_reports` + (1순위 테이블)
+- **주요 기능**:
+    - 기사 프로필 관리
+    - 신규 예약 확인 및 수락
+    - 작업 상태 변경 (예: 이동중, 서비스중, 완료)
+    - 서비스 완료 후 작업 보고서 작성 및 제출
+
+### **3순위: 플랫폼 고도화 및 운영**
+- **목표**: 서비스의 신뢰도를 높이고 운영을 효율화하는 부가 기능을 구현합니다.
+- **관련 테이블**: `reviews`, `settlements`, `notifications` + (1, 2순위 테이블)
+- **주요 기능**:
+    - 고객의 서비스 리뷰 작성 및 조회
+    - 관리자의 기사 정산 관리
+    - 예약 상태 변경 등 주요 이벤트에 대한 알림 발송
+    - 관리자 대시보드 및 회원/예약 관리 기능
+
 ---
 
 ## 1. 사용자 및 권한 관리
+**[시나리오 연관성]**
+- **고객**: 회원가입/로그인, 소셜 로그인 기능을 지원합니다.
+- **서비스 기사**: 관리자의 승인을 통해 가입하고, 자신의 프로필을 관리합니다.
+- **관리자**: 시스템의 모든 사용자를 관리합니다.
 
-### users (사용자 테이블)
-| 컬럼명        | 타입                                    | 제약조건                                             | 설명            |
-|---------------|-----------------------------------------|------------------------------------------------------|-----------------|
-| user_id       | INT                                     | PK, AUTO_INCREMENT                                   | 사용자 식별자   |
-| username      | VARCHAR(50)                             | UNIQUE, NOT NULL                                     | 사용자명        |
-| email         | VARCHAR(100)                            | UNIQUE, NOT NULL                                     | 이메일          |
-| password_hash | VARCHAR(255)                            | NOT NULL                                             | 비밀번호 해시   |
-| role          | ENUM('admin','manager','customer')     | NOT NULL                                             | 사용자 역할     |
-| status        | ENUM('active','inactive','suspended')  | DEFAULT 'active'                                     | 계정 상태       |
-| created_at    | TIMESTAMP                               | DEFAULT CURRENT_TIMESTAMP                            | 생성일시        |
-| updated_at    | TIMESTAMP                               | DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP| 수정일시        |
-| last_login    | TIMESTAMP                               | NULL                                                 | 마지막 로그인   |
+### `users` (사용자)
+- 모든 시스템 사용자(고객, 기사, 관리자)의 기본 정보를 저장합니다.
+- 소셜 로그인을 고려하여 `provider`와 `social_id` 컬럼을 추가합니다.
 
-### customers (고객 상세정보)
-| 컬럼명               | 타입                                          | 제약조건                                                    | 설명               |
-|----------------------|-----------------------------------------------|-------------------------------------------------------------|--------------------|
-| customer_id          | INT                                           | PK, AUTO_INCREMENT                                          | 고객 식별자        |
-| user_id              | INT                                           | NULL, FK -> users.user_id                                   | 연관된 사용자      |
-| name                 | VARCHAR(100)                                  | NOT NULL                                                    | 고객 이름          |
-| phone                | VARCHAR(20)                                   | NOT NULL                                                    | 연락처             |
-| email                | VARCHAR(100)                                  |                                                             | 이메일             |
-| address              | TEXT                                          | NOT NULL                                                    | 주소               |
-| detailed_address     | TEXT                                          |                                                             | 상세 주소          |
-| age_group            | ENUM('20s','30s','40s','50s','60s+')          |                                                             | 연령대             |
-| gender               | ENUM('male','female','other')                |                                                             | 성별               |
-| customer_type        | ENUM('individual','business')                | DEFAULT 'individual'                                        | 고객 유형          |
-| registration_source  | ENUM('website','phone','referral','marketing')| DEFAULT 'website'                                           | 등록 경로          |
-| marketing_consent    | BOOLEAN                                       | DEFAULT FALSE                                              | 마케팅 동의        |
-| sms_consent          | BOOLEAN                                       | DEFAULT FALSE                                              | SMS 수신 동의      |
-| created_at           | TIMESTAMP                                     | DEFAULT CURRENT_TIMESTAMP                                   | 생성일시           |
-| updated_at           | TIMESTAMP                                     | DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP       | 수정일시           |
+| 컬럼명 | 타입 | 제약조건 | 설명 |
+| --- | --- | --- | --- |
+| `user_id` | `INT` | PK, AUTO_INCREMENT | 사용자 식별자 |
+| `email` | `VARCHAR(100)` | UNIQUE, NOT NULL | 이메일 (로그인 ID) |
+| `password_hash` | `VARCHAR(255)` | | 비밀번호 해시 (이메일 가입 시) |
+| `name` | `VARCHAR(50)` | NOT NULL | 이름 |
+| `phone` | `VARCHAR(20)` | UNIQUE, NOT NULL | 연락처 |
+| `role` | `ENUM('customer', 'technician', 'admin')` | NOT NULL | 사용자 역할 |
+| `status` | `ENUM('pending', 'active', 'inactive', 'suspended')` | DEFAULT 'pending' | 계정 상태 (기사 승인 대기 등) |
+| `provider` | `ENUM('local', 'kakao', 'naver')` | DEFAULT 'local' | 가입 경로 (소셜 로그인) |
+| `social_id` | `VARCHAR(255)` | | 소셜 로그인 ID |
+| `created_at` | `TIMESTAMP` | DEFAULT CURRENT_TIMESTAMP | 생성일시 |
+| `updated_at` | `TIMESTAMP` | ON UPDATE CURRENT_TIMESTAMP | 수정일시 |
+| `last_login` | `TIMESTAMP` | | 마지막 로그인 |
+
+### `customers` (고객)
+- 고객의 상세 정보를 저장합니다.
+
+| 컬럼명 | 타입 | 제약조건 | 설명 |
+| --- | --- | --- | --- |
+| `customer_id` | `INT` | PK, AUTO_INCREMENT | 고객 식별자 |
+| `user_id` | `INT` | NOT NULL, FK -> `users`.`user_id` | 사용자 참조 |
+| `address` | `TEXT` | | 주소 |
+| `marketing_consent` | `BOOLEAN` | DEFAULT FALSE | 마케팅 동의 |
+| `created_at` | `TIMESTAMP` | DEFAULT CURRENT_TIMESTAMP | 생성일시 |
+| `updated_at` | `TIMESTAMP` | ON UPDATE CURRENT_TIMESTAMP | 수정일시 |
+
+### `technicians` (서비스 기사)
+- 서비스 기사의 프로필, 전문 분야 등 상세 정보를 저장합니다.
+
+| 컬럼명 | 타입 | 제약조건 | 설명 |
+| --- | --- | --- | --- |
+| `technician_id` | `INT` | PK, AUTO_INCREMENT | 기사 식별자 |
+| `user_id` | `INT` | NOT NULL, FK -> `users`.`user_id` | 사용자 참조 |
+| `profile_image_url` | `VARCHAR(255)` | | 프로필 사진 URL |
+| `introduction` | `TEXT` | | 자기소개 |
+| `expertise` | `JSON` | | 전문 분야 (e.g., `["벽걸이", "스탠드"]`) |
+| `service_area` | `JSON` | | 서비스 가능 지역 (e.g., `["서울시 강남구", "경기도 성남시"]`) |
+| `career_years` | `INT` | | 경력 (년차) |
+| `rating_average` | `DECIMAL(3, 2)` | DEFAULT 0.00 | 평균 별점 |
+| `created_at` | `TIMESTAMP` | DEFAULT CURRENT_TIMESTAMP | 생성일시 |
+| `updated_at` | `TIMESTAMP` | ON UPDATE CURRENT_TIMESTAMP | 수정일시 |
 
 ---
+
 ## 2. 에어컨 제품 관리
 
 ### ac_brands (에어컨 브랜드)
@@ -87,107 +143,129 @@
 
 ---
 ## 3. 서비스 및 예약 관리
+**[시나리오 연관성]**
+- **고객**: 서비스 종류를 보고 선택하며, 원하는 날짜와 주소로 예약을 신청합니다. 자신의 예약 상태를 실시간으로 확인하고 변경/취소할 수 있습니다.
+- **서비스 기사**: 배정된 예약을 확인하고, 고객 정보와 요청사항을 파악합니다.
+- **관리자**: 모든 예약 현황을 모니터링하고, 필요시 수동으로 예약을 관리합니다.
 
-### services (서비스 종류)
-| 컬럼명            | 타입                | 제약조건                                                  | 설명               |
-|-------------------|---------------------|-----------------------------------------------------------|--------------------|
-| service_id        | INT                 | PK, AUTO_INCREMENT                                        | 서비스 식별자      |
-| service_name      | VARCHAR(100)        | NOT NULL                                                  | 서비스명           |
-| description       | TEXT                |                                                           | 설명               |
-| base_price        | DECIMAL(10,2)       | NOT NULL                                                  | 기본 가격          |
-| duration_minutes  | INT                 | NOT NULL                                                  | 소요 시간 (분)     |
-| service_type      | ENUM('basic','premium','maintenance')| NOT NULL                                | 서비스 유형        |
-| includes          | TEXT                |                                                           | 포함 내용         |
-| is_active         | BOOLEAN             | DEFAULT TRUE                                              | 활성 상태         |
-| created_at        | TIMESTAMP           | DEFAULT CURRENT_TIMESTAMP                                 | 생성일시           |
-| updated_at        | TIMESTAMP           | DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP     | 수정일시           |
+### `services` (서비스)
+- 제공하는 서비스의 종류와 가격 정보를 관리합니다.
 
-### bookings (예약)
-| 컬럼명            | 타입                                     | 제약조건                                                        | 설명                |
-|-------------------|------------------------------------------|-----------------------------------------------------------------|---------------------|
-| booking_id        | INT                                      | PK, AUTO_INCREMENT                                              | 예약 식별자         |
-| customer_id       | INT                                      | NOT NULL, FK -> customers.customer_id                           | 고객 참조           |
-| service_id        | INT                                      | NOT NULL, FK -> services.service_id                             | 서비스 참조         |
-| aircon_id         | INT                                      | FK -> customer_aircons.aircon_id                                | 고객 에어컨 참조   |
-| booking_date      | DATE                                     | NOT NULL                                                        | 예약 날짜           |
-| booking_time      | TIME                                     | NOT NULL                                                        | 예약 시간           |
-| status            | ENUM('pending','confirmed','in_progress','completed','cancelled')| DEFAULT 'pending'             | 예약 상태           |
-| total_price       | DECIMAL(10,2)                            |                                                                 | 총 금액             |
-| discount_amount   | DECIMAL(10,2)                            | DEFAULT 0                                                       | 할인 금액           |
-| payment_status    | ENUM('pending','paid','refunded')       | DEFAULT 'pending'                                               | 결제 상태           |
-| payment_method    | ENUM('cash','card','transfer','kakao_pay')|                                                               | 결제 수단           |
-| special_requests  | TEXT                                     |                                                                 | 요청 사항           |
-| technician_notes  | TEXT                                     |                                                                 | 기술자 메모        |
-| created_at        | TIMESTAMP                                | DEFAULT CURRENT_TIMESTAMP                                       | 생성일시           |
-| updated_at        | TIMESTAMP                                | DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP           | 수정일시           |
+| 컬럼명 | 타입 | 제약조건 | 설명 |
+| --- | --- | --- | --- |
+| `service_id` | `INT` | PK, AUTO_INCREMENT | 서비스 식별자 |
+| `service_name` | `VARCHAR(100)` | NOT NULL | 서비스명 (e.g., "벽걸이 에어컨 기본 세척") |
+| `description` | `TEXT` | | 상세 설명 |
+| `price` | `DECIMAL(10, 2)` | NOT NULL | 기본 가격 |
+| `duration_minutes` | `INT` | | 예상 소요 시간 (분) |
+| `is_active` | `BOOLEAN` | DEFAULT TRUE | 활성 상태 |
+| `created_at` | `TIMESTAMP` | DEFAULT CURRENT_TIMESTAMP | 생성일시 |
+| `updated_at` | `TIMESTAMP` | ON UPDATE CURRENT_TIMESTAMP | 수정일시 |
 
-### service_records (서비스 완료 기록)
-| 컬럼명               | 타입                                | 제약조건                                                  | 설명                  |
-|----------------------|-------------------------------------|-----------------------------------------------------------|-----------------------|
-| record_id            | INT                                 | PK, AUTO_INCREMENT                                        | 기록 식별자           |
-| booking_id           | INT                                 | NOT NULL, FK -> bookings.booking_id                       | 예약 참조            |
-| technician_name      | VARCHAR(100)                        |                                                           | 기술자 이름           |
-| start_time           | TIMESTAMP                           |                                                           | 작업 시작 시각        |
-| end_time             | TIMESTAMP                           |                                                           | 작업 종료 시각        |
-| work_summary         | TEXT                                |                                                           | 작업 요약             |
-| issues_found         | TEXT                                |                                                           | 이슈 내역             |
-| recommendations      | TEXT                                |                                                           | 권장 사항             |
-| parts_replaced       | TEXT                                |                                                           | 교체 부품             |
-| next_service_date    | DATE                                |                                                           | 다음 서비스 예정일    |
-| customer_satisfaction| INT                                 | CHECK (1 ≤ value ≤ 5)                                     | 고객 만족도           |
-| created_at           | TIMESTAMP                           | DEFAULT CURRENT_TIMESTAMP                                   | 생성일시            |
+### `bookings` (예약)
+- 고객의 서비스 예약 정보를 관리합니다.
+
+| 컬럼명 | 타입 | 제약조건 | 설명 |
+| --- | --- | --- | --- |
+| `booking_id` | `INT` | PK, AUTO_INCREMENT | 예약 식별자 |
+| `customer_id` | `INT` | NOT NULL, FK -> `customers`.`customer_id` | 고객 참조 |
+| `technician_id` | `INT` | FK -> `technicians`.`technician_id` | 배정된 기사 참조 |
+| `service_datetime` | `TIMESTAMP` | NOT NULL | 서비스 희망/예정 일시 |
+| `status` | `ENUM('pending', 'confirmed', 'technician_assigned', 'on_the_way', 'in_progress', 'completed', 'cancelled')` | DEFAULT 'pending' | 예약 상태 |
+| `address` | `TEXT` | NOT NULL | 서비스 주소 |
+| `special_requests` | `TEXT` | | 특별 요청사항 |
+| `total_price` | `DECIMAL(10, 2)` | | 최종 결제 금액 |
+| `created_at` | `TIMESTAMP` | DEFAULT CURRENT_TIMESTAMP | 생성일시 |
+| `updated_at` | `TIMESTAMP` | ON UPDATE CURRENT_TIMESTAMP | 수정일시 |
+
+### `booking_services` (예약-서비스 내역)
+- 한 예약에 여러 서비스가 포함될 경우를 대비한 중간 테이블입니다.
+
+| 컬럼명 | 타입 | 제약조건 | 설명 |
+| --- | --- | --- | --- |
+| `booking_service_id` | `INT` | PK, AUTO_INCREMENT | 식별자 |
+| `booking_id` | `INT` | NOT NULL, FK -> `bookings`.`booking_id` | 예약 참조 |
+| `service_id` | `INT` | NOT NULL, FK -> `services`.`service_id` | 서비스 참조 |
+| `quantity` | `INT` | NOT NULL, DEFAULT 1 | 수량 |
+| `price_at_booking` | `DECIMAL(10, 2)` | NOT NULL | 예약 시점의 단가 |
 
 ---
-## 4. 미디어 및 컨텐츠 관리
 
-### media_files (미디어 파일)
-| 컬럼명           | 타입                             | 제약조건                                            | 설명             |
-|------------------|----------------------------------|-----------------------------------------------------|------------------|
-| file_id          | INT                              | PK, AUTO_INCREMENT                                  | 파일 식별자      |
-| filename         | VARCHAR(255)                     | NOT NULL                                            | 파일 이름       |
-| original_filename| VARCHAR(255)                     |                                                     | 원본 파일 이름   |
-| file_path        | VARCHAR(500)                     | NOT NULL                                            | 저장 경로        |
-| file_type        | ENUM('image','video','document') | NOT NULL                                            | 파일 유형        |
-| file_size        | INT                              |                                                     | 파일 크기 (바이트)|
-| mime_type        | VARCHAR(100)                     |                                                     | MIME 타입       |
-| uploaded_by      | INT                              | FK -> users.user_id                                 | 업로더           |
-| upload_purpose   | ENUM('gallery','catalog','manual','profile','marketing')|                                     | 업로드 용도       |
-| created_at       | TIMESTAMP                        | DEFAULT CURRENT_TIMESTAMP                            | 업로드 일시      |
+## 4. 결제 및 정산 관리
+**[시나리오 연관성]**
+- **고객**: 예약 시 등록된 결제수단으로 간편하게 선결제합니다.
+- **서비스 기사**: 완료한 작업에 대한 수익과 정산 내역을 확인합니다.
+- **관리자**: 전체 매출과 수수료를 관리하고, 기사별 정산을 실행합니다.
 
-### work_gallery (작업 갤러리)
-| 컬럼명            | 타입            | 제약조건                                        | 설명               |
-|-------------------|-----------------|-------------------------------------------------|---------------------|
-| gallery_id        | INT             | PK, AUTO_INCREMENT                              | 갤러리 식별자       |
-| record_id         | INT             | FK -> service_records.record_id                 | 서비스 기록 참조    |
-| before_image_id   | INT             | FK -> media_files.file_id                       | 이전 이미지 참조    |
-| after_image_id    | INT             | FK -> media_files.file_id                       | 이후 이미지 참조    |
-| work_video_id     | INT             | FK -> media_files.file_id                       | 작업 비디오 참조    |
-| title             | VARCHAR(200)    |                                                 | 제목                |
-| description       | TEXT            |                                                 | 설명                |
-| is_featured       | BOOLEAN         | DEFAULT FALSE                                   | 추천 여부           |
-| is_public         | BOOLEAN         | DEFAULT TRUE                                    | 공개 여부           |
-| tags              | VARCHAR(500)    |                                                 | 태그 (콤마 구분)     |
-| created_at        | TIMESTAMP       | DEFAULT CURRENT_TIMESTAMP                       | 생성일시           |
+### `payments` (결제)
+- 예약에 대한 결제 정보를 관리합니다.
 
----
-## 5. 리뷰 및 피드백
+| 컬럼명 | 타입 | 제약조건 | 설명 |
+| --- | --- | --- | --- |
+| `payment_id` | `INT` | PK, AUTO_INCREMENT | 결제 식별자 |
+| `booking_id` | `INT` | NOT NULL, FK -> `bookings`.`booking_id` | 예약 참조 |
+| `payment_method` | `VARCHAR(50)` | | 결제 수단 (e.g., "신용카드") |
+| `amount` | `DECIMAL(10, 2)` | NOT NULL | 결제 금액 |
+| `status` | `ENUM('pending', 'completed', 'failed', 'refunded')` | DEFAULT 'pending' | 결제 상태 |
+| `transaction_id` | `VARCHAR(255)` | | 외부 결제사 거래 ID |
+| `paid_at` | `TIMESTAMP` | | 결제 완료 일시 |
+| `created_at` | `TIMESTAMP` | DEFAULT CURRENT_TIMESTAMP | 생성일시 |
 
-### reviews (고객 리뷰)
-| 컬럼명          | 타입                        | 제약조건                                               | 설명               |
-|-----------------|-----------------------------|--------------------------------------------------------|--------------------|
-| review_id       | INT                         | PK, AUTO_INCREMENT                                     | 리뷰 식별자        |
-| customer_id     | INT                         | NOT NULL, FK -> customers.customer_id                  | 고객 참조          |
-| booking_id      | INT                         | FK -> bookings.booking_id                              | 예약 참조          |
-| rating          | INT                         | NOT NULL, CHECK (1 ≤ value ≤ 5)                        | 평점               |
-| review_text     | TEXT                        |                                                        | 리뷰 텍스트        |
-| review_photos   | TEXT                        |                                                        | 사진 ID 배열       |
-| is_featured     | BOOLEAN                     | DEFAULT FALSE                                          | 추천 여부          |
-| is_public       | BOOLEAN                     | DEFAULT TRUE                                           | 공개 여부          |
-| admin_response  | TEXT                        |                                                        | 관리자 답변        |
-| created_at      | TIMESTAMP                   | DEFAULT CURRENT_TIMESTAMP                              | 생성일시           |
-| updated_at      | TIMESTAMP                   | DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP | 수정일시           |
+### `settlements` (정산)
+- 서비스 기사에 대한 정산 내역을 관리합니다.
+
+| 컬럼명 | 타입 | 제약조건 | 설명 |
+| --- | --- | --- | --- |
+| `settlement_id` | `INT` | PK, AUTO_INCREMENT | 정산 식별자 |
+| `technician_id` | `INT` | NOT NULL, FK -> `technicians`.`technician_id` | 기사 참조 |
+| `settlement_period` | `VARCHAR(50)` | NOT NULL | 정산 기간 (e.g., "2024-05") |
+| `total_amount` | `DECIMAL(10, 2)` | NOT NULL | 총 서비스 금액 |
+| `commission_fee` | `DECIMAL(10, 2)` | NOT NULL | 플랫폼 수수료 |
+| `final_amount` | `DECIMAL(10, 2)` | NOT NULL | 최종 정산액 |
+| `status` | `ENUM('pending', 'completed')` | DEFAULT 'pending' | 정산 상태 |
+| `completed_at` | `TIMESTAMP` | | 정산 완료 일시 |
+| `created_at` | `TIMESTAMP` | DEFAULT CURRENT_TIMESTAMP | 생성일시 |
 
 ---
+
+## 5. 서비스 기록 및 리뷰 관리
+**[시나리오 연관성]**
+- **고객**: 완료된 서비스에 대한 후기를 작성하고, 다른 고객의 후기를 조회하여 기사 선택에 참고합니다.
+- **서비스 기사**: 서비스 완료 후, 작업 전/후 사진을 포함한 작업 보고서를 작성하여 고객 신뢰도를 높입니다.
+- **관리자**: 작성된 후기를 모니터링하고, 부적절한 콘텐츠를 관리합니다.
+
+### `service_reports` (작업 보고서)
+- 서비스 완료 후 기사가 작성하는 보고서입니다.
+
+| 컬럼명 | 타입 | 제약조건 | 설명 |
+| --- | --- | --- | --- |
+| `report_id` | `INT` | PK, AUTO_INCREMENT | 보고서 식별자 |
+| `booking_id` | `INT` | NOT NULL, FK -> `bookings`.`booking_id` | 예약 참조 |
+| `summary` | `TEXT` | | 작업 요약 |
+| `before_image_urls` | `JSON` | | 작업 전 사진 URL 목록 |
+| `after_image_urls` | `JSON` | | 작업 후 사진 URL 목록 |
+| `recommendations` | `TEXT` | | 추가 권장 사항 |
+| `created_at` | `TIMESTAMP` | DEFAULT CURRENT_TIMESTAMP | 생성일시 |
+
+### `reviews` (리뷰)
+- 고객이 서비스에 대해 작성하는 리뷰 및 평점입니다.
+
+| 컬럼명 | 타입 | 제약조건 | 설명 |
+| --- | --- | --- | --- |
+| `review_id` | `INT` | PK, AUTO_INCREMENT | 리뷰 식별자 |
+| `booking_id` | `INT` | NOT NULL, FK -> `bookings`.`booking_id` | 예약 참조 |
+| `customer_id` | `INT` | NOT NULL, FK -> `customers`.`customer_id` | 고객 참조 |
+| `technician_id` | `INT` | NOT NULL, FK -> `technicians`.`technician_id` | 기사 참조 |
+| `rating` | `INT` | NOT NULL, CHECK (`rating` BETWEEN 1 AND 5) | 평점 (1~5) |
+| `comment` | `TEXT` | | 리뷰 내용 |
+| `image_urls` | `JSON` | | 첨부 사진 URL 목록 |
+| `is_public` | `BOOLEAN` | DEFAULT TRUE | 공개 여부 |
+| `admin_response` | `TEXT` | | 관리자 답변 |
+| `created_at` | `TIMESTAMP` | DEFAULT CURRENT_TIMESTAMP | 생성일시 |
+| `updated_at` | `TIMESTAMP` | ON UPDATE CURRENT_TIMESTAMP | 수정일시 |
+
+---
+
 ## 6. 마케팅 및 분석
 
 ### marketing_campaigns (마케팅 캠페인)

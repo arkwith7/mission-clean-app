@@ -1,31 +1,36 @@
-# 빌드 스테이지
+# --- Build Stage ---
+# Use a specific Node.js version for consistency
 FROM node:18-alpine AS builder
 
+# Set the working directory
 WORKDIR /app
 
-# package.json과 package-lock.json 복사
+# Copy package.json and lock file
 COPY package*.json ./
 
-# 의존성 설치
+# Install dependencies cleanly for production
 RUN npm ci
 
-# 소스 코드 복사
+# Copy the rest of the source code
 COPY . .
 
-# 프로덕션 빌드
+# Build the React app for production, creating an optimized build in /app/dist
 RUN npm run build
 
-# 프로덕션 스테이지
+
+# --- Production Stage ---
+# Use a lightweight Nginx image
 FROM nginx:alpine
 
-# 빌드된 파일을 Nginx 서버로 복사
+# Copy the optimized build files from the builder stage to Nginx's web root
 COPY --from=builder /app/dist /usr/share/nginx/html
 
-# Nginx 설정 복사
+# Copy the custom Nginx configuration file
+# This file will configure Nginx to serve the React app and proxy API requests.
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# 포트 노출
+# Expose port 80 for standard HTTP traffic
 EXPOSE 80
 
-# Nginx 시작
+# Start Nginx in the foreground
 CMD ["nginx", "-g", "daemon off;"] 

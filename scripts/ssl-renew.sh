@@ -22,10 +22,14 @@ if [ ! -f "docker-compose.prod.yml" ]; then
 fi
 
 # 환경 변수 로드
-if [ -f ".env" ]; then
+if [ -f "env.production" ]; then
+    source env.production
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] ✅ env.production 파일 로드됨"
+elif [ -f ".env" ]; then
     source .env
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] ✅ .env 파일 로드됨"
 else
-    echo "[$(date '+%Y-%m-%d %H:%M:%S')] ⚠️ .env 파일을 찾을 수 없습니다."
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] ⚠️ 환경 설정 파일을 찾을 수 없습니다."
 fi
 
 # Certbot으로 인증서 갱신 시도
