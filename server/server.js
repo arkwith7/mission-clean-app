@@ -76,6 +76,7 @@ app.use('/api/bookings', require('./routes/bookingRoutes'));
 app.use('/api/customers', require('./routes/customerRoutes'));
 app.use('/api/aircon-specs', require('./routes/airconSpecRoutes'));
 app.use('/api/services', require('./routes/serviceRoutes'));
+app.use('/api/dashboard', require('./routes/dashboardRoutes'));
 
 // Health check endpoint
 app.get('/health', async (req, res) => {

@@ -282,4 +282,43 @@ export const customerAPI = {
   },
 }
 
+// Dashboard Stats Interface
+export interface DashboardStats {
+  bookings: {
+    total: number
+    pending: number
+    confirmed: number
+    completed: number
+    cancelled: number
+  }
+  users: {
+    total: number
+    admin: number
+    manager: number
+    customer: number
+    active: number
+  }
+  customers: {
+    total: number
+    individual: number
+    corporate: number
+    marketingConsent: number
+    smsConsent: number
+  }
+}
+
+export interface DashboardStatsResponse {
+  success: boolean
+  data: DashboardStats
+}
+
+// Dashboard API
+export const dashboardAPI = {
+  // 대시보드 통계 조회
+  getStats: async (): Promise<DashboardStatsResponse> => {
+    const response = await api.get('/dashboard/stats')
+    return response.data
+  },
+}
+
 export default api

@@ -1,36 +1,74 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { dashboardAPI, type DashboardStats } from '../../services/api'
 
-interface Stats {
-  bookings: {
-    total: number
-    pending: number
-    confirmed: number
-    completed: number
-    cancelled: number
-  }
-  users: {
-    total: number
-    admin: number
-    manager: number
-    customer: number
-    active: number
-  }
-  customers: {
-    total: number
-    individual: number
-    corporate: number
-    marketingConsent: number
-    smsConsent: number
-  }
-}
+const DashboardStatsComponent = () => {
+  const [stats, setStats] = useState<DashboardStats | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState('')
 
-const DashboardStats = () => {
-  const [stats] = useState<Stats>({
-    // 임시 데이터 - 나중에 실제 API로 교체
-    bookings: { total: 37, pending: 2, confirmed: 12, completed: 22, cancelled: 1 },
-    users: { total: 45, admin: 2, manager: 5, customer: 38, active: 42 },
-    customers: { total: 156, individual: 120, corporate: 36, marketingConsent: 89, smsConsent: 134 }
-  })
+  useEffect(() => {
+    fetchStats()
+  }, [])
+
+  const fetchStats = async () => {
+    try {
+      setIsLoading(true)
+      setError('')
+      const response = await dashboardAPI.getStats()
+      console.log('📊 [DashboardStats] API 응답:', response)
+      setStats(response.data)
+    } catch (error: any) {
+      console.error('대시보드 통계 조회 오류:', error)
+      setError('통계 데이터를 불러오는 중 오류가 발생했습니다.')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">통계 데이터를 불러오는 중...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="bg-red-50 border border-red-200 rounded-lg p-6">
+        <div className="flex items-center">
+          <span className="text-red-500 text-xl mr-3">⚠️</span>
+          <div>
+            <h3 className="text-red-800 font-medium">데이터 로딩 오류</h3>
+            <p className="text-red-600 text-sm mt-1">{error}</p>
+            <button
+              onClick={fetchStats}
+              className="mt-3 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors text-sm"
+            >
+              다시 시도
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (!stats) {
+    return (
+      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
+        <div className="flex items-center">
+          <span className="text-yellow-500 text-xl mr-3">📊</span>
+          <div>
+            <h3 className="text-yellow-800 font-medium">데이터 없음</h3>
+            <p className="text-yellow-600 text-sm mt-1">통계 데이터를 찾을 수 없습니다.</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">
@@ -196,4 +234,4 @@ const DashboardStats = () => {
   )
 }
 
-export default DashboardStats 
+export default DashboardStatsComponent 
