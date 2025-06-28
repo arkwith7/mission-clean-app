@@ -54,7 +54,7 @@ docker-compose -f docker-compose.prod.yml down --remove-orphans 2>/dev/null || t
 
 echo "### Preparing Certbot... ###"
 # Create a dummy certificate to allow Nginx to start
-mkdir -p ./certbot/conf
+mkdir -p ./certbot/conf ./certbot/www
 curl -s https://raw.githubusercontent.com/certbot/certbot/master/certbot-nginx/certbot_nginx/_internal/tls_configs/options-ssl-nginx.conf > "./certbot/conf/options-ssl-nginx.conf"
 curl -s https://raw.githubusercontent.com/certbot/certbot/master/certbot/certbot/ssl-dhparams.pem > "./certbot/conf/ssl-dhparams.pem"
 ./scripts/dummy_cert.sh "${domains[@]}"
@@ -62,6 +62,9 @@ curl -s https://raw.githubusercontent.com/certbot/certbot/master/certbot/certbot
 echo "### Starting Nginx for the first time... ###"
 # Start Nginx using the dummy certificate
 docker-compose -f docker-compose.prod.yml up --force-recreate -d nginx
+
+echo "### Waiting for Nginx to be ready... ###"
+sleep 10
 
 echo "### Deleting dummy certificate... ###"
 # Delete the dummy certificate

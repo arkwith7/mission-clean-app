@@ -1,4 +1,7 @@
-require('dotenv').config({ path: '../.env' });
+// 프로덕션 환경에서는 Docker Compose에서 환경 변수를 로드
+if (process.env.NODE_ENV !== 'production') {
+  require('dotenv').config({ path: '../.env' });
+}
 
 // 출력 버퍼링 비활성화
 process.stdout.setDefaultEncoding('utf8');
@@ -99,6 +102,27 @@ app.use((error, req, res, next) => {
 const main = async () => {
   try {
     logger.system('Mission Clean API 서버를 시작합니다...');
+    
+    // 데이터베이스 연결 재시도 로직
+    let retries = 5;
+    while (retries > 0) {
+      try {
+        logger.info(`데이터베이스 연결 시도 중... (남은 시도: ${retries})`);
+        await sequelize.authenticate();
+        logger.info('데이터베이스 연결 성공!');
+        break;
+      } catch (error) {
+        retries--;
+        logger.error(`데이터베이스 연결 실패: ${error.message}`);
+        if (retries === 0) {
+          logger.error('데이터베이스 연결 최대 재시도 횟수 초과');
+          throw error;
+        }
+        logger.info('5초 후 재시도...');
+        await new Promise(resolve => setTimeout(resolve, 5000));
+      }
+    }
+    
     await sequelize.sync({ alter: true });
     logger.info('데이터베이스 동기화 완료.');
 

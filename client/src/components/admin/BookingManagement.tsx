@@ -1,19 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
-import { bookingAPI } from '../../services/api'
-
-interface Booking {
-  id: number
-  booking_id: number
-  customer_name: string
-  customer_phone: string
-  customer_address: string
-  service_type: string
-  service_date: string | null
-  service_time: string | null
-  special_requests: string | null
-  status: 'pending' | 'confirmed' | 'completed' | 'cancelled'
-  created_at: string
-}
+import { bookingAPI, type Booking } from '../../services/api'
 
 const BookingManagement = () => {
   const [bookings, setBookings] = useState<Booking[]>([])

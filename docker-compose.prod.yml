@@ -1,4 +1,36 @@
 services:
+  # PostgreSQL 데이터베이스
+  db:
+    image: postgres:15-alpine
+    container_name: mission-clean-postgres
+    restart: unless-stopped
+    env_file:
+      - env.production
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./server/db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - mission-clean-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d mission_clean_dev"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+
   # 백엔드 API 서버
   backend:
     build:
@@ -13,17 +45,19 @@ services:
     env_file:
       - env.production
     volumes:
-      - ./server/mission_clean.sqlite:/app/mission_clean.sqlite
       - ./server/data:/app/data
       - ./server/logs:/app/logs
     networks:
       - mission-clean-network
+    depends_on:
+      db:
+        condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3001/health", "||", "exit", "1"]
-      interval: 30s
+      test: ["CMD-SHELL", "curl -f http://127.0.0.1:3001/health || exit 1"]
+      interval: 60s
       timeout: 10s
-      retries: 5
-      start_period: 120s
+      retries: 10
+      start_period: 300s
     logging:
       driver: "json-file"
       options:
@@ -53,7 +87,7 @@ services:
       backend:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:80/"]
+      test: ["CMD-SHELL", "curl -f http://localhost:80/ || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -85,8 +119,8 @@ services:
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./nginx/conf.d:/etc/nginx/conf.d:ro
-      - certbot-conf:/etc/letsencrypt:ro
-      - certbot-www:/var/www/certbot:ro
+      - ./certbot/conf:/etc/letsencrypt:ro
+      - ./certbot/www:/var/www/certbot:ro
       - ./nginx/logs:/var/log/nginx
     depends_on:
       backend:
@@ -122,8 +156,8 @@ services:
     env_file:
       - env.production
     volumes:
-      - certbot-conf:/etc/letsencrypt
-      - certbot-www:/var/www/certbot
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
     networks:
       - mission-clean-network
     logging:
@@ -145,7 +179,5 @@ networks:
         - subnet: 172.20.0.0/16
 
 volumes:
-  certbot-conf:
-    driver: local
-  certbot-www:
+  postgres_data:
     driver: local 

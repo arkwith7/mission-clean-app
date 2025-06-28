@@ -1,13 +1,12 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { authAPI } from '../services/api'
 import { useAuth } from '../contexts/AuthContext'
 
 const AdminLoginPage = () => {
-  const navigate = useNavigate()
   const { login } = useAuth()
+  const navigate = useNavigate()
   const [formData, setFormData] = useState({
-    email: '',
+    email: 'admin@aircleankorea.com',
     password: ''
   })
   const [rememberEmail, setRememberEmail] = useState(true)

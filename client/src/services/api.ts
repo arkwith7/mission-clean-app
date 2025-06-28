@@ -1,7 +1,7 @@
 import axios from 'axios'
 import type { 
-  User, UserResponse, SingleUserResponse, CreateUserData, UpdateUserData,
-  Customer, CustomerResponse, SingleCustomerResponse, CreateCustomerData, UpdateCustomerData, CustomerStatsResponse
+  UserResponse, SingleUserResponse, CreateUserData, UpdateUserData,
+  CustomerResponse, SingleCustomerResponse, CreateCustomerData, UpdateCustomerData, CustomerStatsResponse
 } from '../types/admin'
 
 const API_BASE_URL = import.meta.env.MODE === 'production'
@@ -101,6 +101,7 @@ export interface RegisterData {
 
 export interface Booking {
   id: number
+  booking_id: number
   service_date: string
   service_time: string
   service_type: string
@@ -109,6 +110,7 @@ export interface Booking {
   customer_name: string
   customer_phone: string
   customer_address: string
+  special_requests: string | null
 }
 
 export const authAPI = {
