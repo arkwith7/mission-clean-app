@@ -189,6 +189,12 @@ export const bookingAPI = {
     const response = await api.put(`/bookings/${id}/status`, { status })
     return response.data
   },
+
+  // 예약 통계 조회
+  getBookingStats: async (): Promise<{ success: boolean; data: { overview: { total: number; pending: number; confirmed: number; completed: number; cancelled: number } } }> => {
+    const response = await api.get('/bookings/stats/overview')
+    return response.data
+  },
 }
 
 // User 관리 API
@@ -232,6 +238,12 @@ export const userAPI = {
   // 사용자 상태 변경
   updateUserStatus: async (id: number, status: string): Promise<{ success: boolean; message: string }> => {
     const response = await api.patch(`/users/${id}/status`, { status })
+    return response.data
+  },
+
+  // 사용자 통계 조회
+  getUserStats: async (): Promise<{ success: boolean; data: { overview: { total: number; admin: number; manager: number; customer: number; active: number } } }> => {
+    const response = await api.get('/users/stats/overview')
     return response.data
   },
 }
@@ -314,10 +326,37 @@ export interface DashboardStatsResponse {
 
 // Dashboard API
 export const dashboardAPI = {
-  // 대시보드 통계 조회
+  // 대시보드 통계 조회 (개별 API들을 호출하여 통합)
   getStats: async (): Promise<DashboardStatsResponse> => {
-    const response = await api.get('/dashboard/stats')
-    return response.data
+    try {
+      // 병렬로 모든 통계 데이터 가져오기
+      const [bookingStats, userStats, customerStats] = await Promise.all([
+        bookingAPI.getBookingStats(),
+        userAPI.getUserStats(),
+        customerAPI.getCustomerStats()
+      ])
+
+      // 통합된 대시보드 통계 데이터 구성
+      const dashboardStats: DashboardStats = {
+        bookings: bookingStats.data.overview,
+        users: userStats.data.overview,
+        customers: {
+          total: customerStats.data.overview.total,
+          individual: customerStats.data.overview.individual,
+          corporate: customerStats.data.overview.business, // API에서는 business로 반환
+          marketingConsent: customerStats.data.overview.marketingConsent,
+          smsConsent: customerStats.data.overview.smsConsent
+        }
+      }
+
+      return {
+        success: true,
+        data: dashboardStats
+      }
+    } catch (error) {
+      console.error('대시보드 통계 조회 중 오류:', error)
+      throw error
+    }
   },
 }
 

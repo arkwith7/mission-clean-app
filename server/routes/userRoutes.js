@@ -295,4 +295,47 @@ router.patch('/:id/status', authenticateToken, requireRole(['admin']), async (re
   }
 });
 
+// 사용자 통계 조회 (관리자만)
+router.get('/stats/overview', authenticateToken, requireRole(['admin']), async (req, res) => {
+  try {
+    // 전체 사용자 수
+    const totalUsers = await User.count();
+    
+    // 역할별 사용자 수
+    const adminUsers = await User.count({ where: { role: 'admin' } });
+    const managerUsers = await User.count({ where: { role: 'manager' } });
+    const customerUsers = await User.count({ where: { role: 'customer' } });
+    
+    // 활성 사용자 수
+    const activeUsers = await User.count({ where: { status: 'active' } });
+
+    console.log('사용자 통계 조회:', {
+      total: totalUsers,
+      admin: adminUsers,
+      manager: managerUsers,
+      customer: customerUsers,
+      active: activeUsers
+    });
+
+    res.json({
+      success: true,
+      data: {
+        overview: {
+          total: totalUsers,
+          admin: adminUsers,
+          manager: managerUsers,
+          customer: customerUsers,
+          active: activeUsers
+        }
+      }
+    });
+  } catch (error) {
+    console.error('사용자 통계 조회 오류:', error);
+    res.status(500).json({
+      success: false,
+      error: '사용자 통계를 불러오는 중 오류가 발생했습니다.'
+    });
+  }
+});
+
 module.exports = router; 

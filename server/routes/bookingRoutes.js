@@ -568,4 +568,86 @@ router.put('/:id/status', authenticateToken, requireManager, async (req, res) =>
   }
 });
 
+/**
+ * @swagger
+ * /api/bookings/stats/overview:
+ *   get:
+ *     summary: 예약 통계 조회
+ *     description: 예약 현황 통계를 조회합니다. (관리자/매니저만 접근 가능)
+ *     tags: [Bookings]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: 예약 통계 조회 성공
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     overview:
+ *                       type: object
+ *                       properties:
+ *                         total:
+ *                           type: integer
+ *                           example: 37
+ *                         pending:
+ *                           type: integer
+ *                           example: 2
+ *                         confirmed:
+ *                           type: integer
+ *                           example: 12
+ *                         completed:
+ *                           type: integer
+ *                           example: 22
+ *                         cancelled:
+ *                           type: integer
+ *                           example: 1
+ */
+router.get('/stats/overview', authenticateToken, requireManager, async (req, res) => {
+  try {
+    // 전체 예약 수
+    const totalBookings = await Booking.count();
+    
+    // 상태별 예약 수
+    const pendingBookings = await Booking.count({ where: { status: 'pending' } });
+    const confirmedBookings = await Booking.count({ where: { status: 'confirmed' } });
+    const completedBookings = await Booking.count({ where: { status: 'completed' } });
+    const cancelledBookings = await Booking.count({ where: { status: 'cancelled' } });
+
+    logger.info('예약 통계 조회', { 
+      userId: req.user.user_id,
+      totalBookings 
+    });
+
+    res.json({
+      success: true,
+      data: {
+        overview: {
+          total: totalBookings,
+          pending: pendingBookings,
+          confirmed: confirmedBookings,
+          completed: completedBookings,
+          cancelled: cancelledBookings
+        }
+      }
+    });
+  } catch (error) {
+    logger.error('예약 통계 조회 중 오류', { 
+      error: error.message, 
+      userId: req.user?.user_id 
+    });
+    res.status(500).json({
+      success: false,
+      error: '예약 통계를 불러오는 중 오류가 발생했습니다.'
+    });
+  }
+});
+
 module.exports = router;

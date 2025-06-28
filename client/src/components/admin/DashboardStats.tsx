@@ -1,36 +1,59 @@
 import { useState, useEffect } from 'react'
-import { dashboardAPI, type DashboardStats } from '../../services/api'
+import { dashboardAPI } from '../../services/api'
 
-const DashboardStatsComponent = () => {
-  const [stats, setStats] = useState<DashboardStats | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState('')
+interface Stats {
+  bookings: {
+    total: number
+    pending: number
+    confirmed: number
+    completed: number
+    cancelled: number
+  }
+  users: {
+    total: number
+    admin: number
+    manager: number
+    customer: number
+    active: number
+  }
+  customers: {
+    total: number
+    individual: number
+    corporate: number
+    marketingConsent: number
+    smsConsent: number
+  }
+}
+
+const DashboardStats = () => {
+  const [stats, setStats] = useState<Stats | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string>('')
 
   useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        setLoading(true)
+        setError('')
+        const response = await dashboardAPI.getStats()
+        setStats(response.data)
+      } catch (error: unknown) {
+        console.error('통계 데이터 조회 중 오류:', error)
+        setError('통계 데이터를 불러오는 중 오류가 발생했습니다.')
+      } finally {
+        setLoading(false)
+      }
+    }
+
     fetchStats()
   }, [])
 
-  const fetchStats = async () => {
-    try {
-      setIsLoading(true)
-      setError('')
-      const response = await dashboardAPI.getStats()
-      console.log('📊 [DashboardStats] API 응답:', response)
-      setStats(response.data)
-    } catch (error: any) {
-      console.error('대시보드 통계 조회 오류:', error)
-      setError('통계 데이터를 불러오는 중 오류가 발생했습니다.')
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  if (isLoading) {
+  if (loading) {
     return (
-      <div className="flex items-center justify-center py-12">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">통계 데이터를 불러오는 중...</p>
+          <p className="text-gray-600">통계 데이터 로딩 중...</p>
         </div>
       </div>
     )
@@ -38,19 +61,16 @@ const DashboardStatsComponent = () => {
 
   if (error) {
     return (
-      <div className="bg-red-50 border border-red-200 rounded-lg p-6">
-        <div className="flex items-center">
-          <span className="text-red-500 text-xl mr-3">⚠️</span>
-          <div>
-            <h3 className="text-red-800 font-medium">데이터 로딩 오류</h3>
-            <p className="text-red-600 text-sm mt-1">{error}</p>
-            <button
-              onClick={fetchStats}
-              className="mt-3 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors text-sm"
-            >
-              다시 시도
-            </button>
-          </div>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-red-500 text-xl mb-4">⚠️</div>
+          <p className="text-red-600">{error}</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          >
+            다시 시도
+          </button>
         </div>
       </div>
     )
@@ -58,13 +78,9 @@ const DashboardStatsComponent = () => {
 
   if (!stats) {
     return (
-      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
-        <div className="flex items-center">
-          <span className="text-yellow-500 text-xl mr-3">📊</span>
-          <div>
-            <h3 className="text-yellow-800 font-medium">데이터 없음</h3>
-            <p className="text-yellow-600 text-sm mt-1">통계 데이터를 찾을 수 없습니다.</p>
-          </div>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-gray-600">통계 데이터가 없습니다.</p>
         </div>
       </div>
     )
@@ -210,22 +226,22 @@ const DashboardStatsComponent = () => {
           <div className="flex items-center space-x-3 p-3 bg-blue-50 rounded-lg">
             <span className="text-blue-600">📋</span>
             <div className="flex-1">
-              <p className="text-sm font-medium">새로운 예약이 등록되었습니다.</p>
-              <p className="text-xs text-gray-500">5분 전</p>
+              <p className="text-sm font-medium">실시간 데이터가 업데이트되었습니다.</p>
+              <p className="text-xs text-gray-500">방금 전</p>
             </div>
           </div>
           <div className="flex items-center space-x-3 p-3 bg-green-50 rounded-lg">
-            <span className="text-green-600">👤</span>
+            <span className="text-green-600">📊</span>
             <div className="flex-1">
-              <p className="text-sm font-medium">새로운 회원이 가입했습니다.</p>
-              <p className="text-xs text-gray-500">15분 전</p>
+              <p className="text-sm font-medium">통계 데이터가 새로고침되었습니다.</p>
+              <p className="text-xs text-gray-500">1분 전</p>
             </div>
           </div>
           <div className="flex items-center space-x-3 p-3 bg-purple-50 rounded-lg">
-            <span className="text-purple-600">🏢</span>
+            <span className="text-purple-600">🔄</span>
             <div className="flex-1">
-              <p className="text-sm font-medium">고객 정보가 업데이트되었습니다.</p>
-              <p className="text-xs text-gray-500">30분 전</p>
+              <p className="text-sm font-medium">대시보드가 실시간 데이터로 전환되었습니다.</p>
+              <p className="text-xs text-gray-500">방금 전</p>
             </div>
           </div>
         </div>
@@ -234,4 +250,4 @@ const DashboardStatsComponent = () => {
   )
 }
 
-export default DashboardStatsComponent 
+export default DashboardStats 
