@@ -121,15 +121,28 @@ Vite 개발 서버가 안내하는 주소(예: `http://localhost:5173`)로 접�
 
 ## 🚀 운영환경 배포 가이드
 
+### 🔒 보안 주의사항
+> ⚠️ **중요**: `env.production` 파일은 민감한 정보를 포함하므로 **절대 Git에 커밋하지 마세요!**
+
 ### 배포 전 준비사항
 
-1. **환경변수 설정**:
+1. **🔐 환경변수 파일 생성**:
    ```bash
-   # env.production 파일의 JWT_SECRET을 강력한 값으로 변경
-   # EMAIL 주소를 실제 관리자 이메일로 설정
+   # 템플릿 파일을 복사하여 실제 환경변수 파일 생성
+   cp env.production.example env.production
+   
+   # 실제 운영 값으로 수정 (필수!)
+   vim env.production
    ```
 
-2. **도메인 설정 확인**:
+2. **🔑 필수 보안 설정**:
+   - `JWT_SECRET`: 32자 이상의 강력한 랜덤 문자열
+   - `ADMIN_PASSWORD`: 강력한 관리자 비밀번호
+   - `NCLOUD_ACCESS_KEY`: 네이버 클라우드 API 액세스 키
+   - `NCLOUD_SECRET_KEY`: 네이버 클라우드 API 시크릿 키
+   - `NCLOUD_SENS_SERVICE_ID`: SMS 서비스 ID
+
+3. **🌐 도메인 설정 확인**:
    - DNS A 레코드: `aircleankorea.com` → 서버 IP
    - DNS A 레코드: `www.aircleankorea.com` → 서버 IP
 
@@ -140,14 +153,26 @@ Vite 개발 서버가 안내하는 주소(예: `http://localhost:5173`)로 접�
 git clone <repository-url>
 cd mission-clean-app
 
-# 2. 환경변수 설정
-cp env.production .env.prod
-# .env.prod 파일에서 JWT_SECRET과 이메일 설정을 확인/수정
+# 2. 운영 환경변수 설정 (보안 필수!)
+cp env.production.example env.production
+nano env.production  # 실제 민감한 정보로 수정
 
-# 3. 운영환경 배포 실행
+# 3. 운영환경 배포 실행 (자동 보안 체크 포함)
 chmod +x deploy.sh
 ./deploy.sh
 ```
+
+### 📱 네이버 클라우드 SENS API 키 발급
+SMS 기능을 위해 다음 단계를 완료하세요:
+
+1. **네이버 클라우드 콘솔 접속**: https://console.ncloud.com/
+2. **API 인증키 관리**: 마이페이지 → 인증키 관리
+3. **새 API 인증키 생성**: Mission-Clean-SMS
+4. **env.production 설정**:
+   ```bash
+   NCLOUD_ACCESS_KEY=NCPxxxxxxxxxxxxxxxxxxxxxx
+   NCLOUD_SECRET_KEY=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+   ```
 
 ### 배포 후 확인사항
 

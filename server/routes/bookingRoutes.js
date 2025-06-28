@@ -3,6 +3,7 @@ const router = express.Router();
 const { Booking, Customer } = require('../models');
 const { authenticateToken, requireManager } = require('../middleware/auth');
 const logger = require('../utils/logger');
+const smsService = require('../utils/smsService');
 
 /**
  * @swagger
@@ -100,8 +101,10 @@ const validateBookingInput = (data) => {
     errors.push('유효한 이름을 입력해주세요.');
   }
 
-  if (!phone || !/^010-\d{4}-\d{4}$/.test(phone.trim())) {
-    errors.push('올바른 전화번호 형식을 입력해주세요. (예: 010-1234-5678)');
+  // 전화번호 형식 검증 (010-1234-5678 또는 01012345678 둘 다 허용)
+  const phonePattern = /^010[-]?\d{4}[-]?\d{4}$/;
+  if (!phone || !phonePattern.test(phone.trim())) {
+    errors.push('올바른 전화번호 형식을 입력해주세요. (예: 010-1234-5678 또는 01012345678)');
   }
 
   if (!address || address.trim().length < 5) {
@@ -159,7 +162,24 @@ const validateBookingInput = (data) => {
  */
 router.post('/', async (req, res) => {
   try {
+    // 받은 요청 데이터 상세 로깅
+    console.log('\n' + '='.repeat(60));
+    console.log('📥 새로운 예약 요청 데이터');
+    console.log('='.repeat(60));
+    console.log('Raw Request Body:', JSON.stringify(req.body, null, 2));
+    console.log('='.repeat(60));
+    
     const { name, phone, address, serviceType, preferredDate, preferredTime, message } = req.body;
+    
+    console.log('📋 파싱된 데이터:');
+    console.log(`이름: ${name}`);
+    console.log(`전화번호: ${phone}`);
+    console.log(`주소: ${address}`);
+    console.log(`서비스 타입: ${serviceType}`);
+    console.log(`희망 날짜: ${preferredDate}`);
+    console.log(`희망 시간: ${preferredTime}`);
+    console.log(`메시지: ${message}`);
+    console.log('='.repeat(60) + '\n');
     
     // 입력값 검증
     const validationErrors = validateBookingInput({ name, phone, address, serviceType });
@@ -171,13 +191,16 @@ router.post('/', async (req, res) => {
       });
     }
 
+    // 전화번호를 표준 형식(대시 포함)으로 변환
+    const formattedPhone = phone.trim().replace(/(\d{3})(\d{4})(\d{4})/, '$1-$2-$3');
+    
     // 고객 정보 생성 또는 업데이트
     const [customer] = await Customer.findOrCreate({
-      where: { phone: phone.trim() },
+      where: { phone: formattedPhone },
       defaults: { 
         name: name.trim(), 
         address: address.trim(), 
-        phone: phone.trim() 
+        phone: formattedPhone 
       }
     });
 
@@ -186,7 +209,7 @@ router.post('/', async (req, res) => {
       customer_id: customer.customer_id,
       service_type: serviceType,
       customer_name: name.trim(),
-      customer_phone: phone.trim(),
+      customer_phone: formattedPhone,
       customer_address: address.trim(),
       service_date: preferredDate || null,
       service_time: preferredTime || null,
@@ -201,6 +224,18 @@ router.post('/', async (req, res) => {
       serviceType, 
       customerPhone: phone 
     });
+
+    // 기사에게 SMS 알림 전송
+    try {
+      await smsService.sendBookingNotification(booking.dataValues);
+      logger.info('예약 SMS 알림 전송 완료', { bookingId: booking.booking_id });
+    } catch (smsError) {
+      // SMS 전송 실패해도 예약은 정상 처리
+      logger.warn('SMS 전송 실패 (예약은 정상 처리)', { 
+        bookingId: booking.booking_id, 
+        error: smsError.message 
+      });
+    }
     
     res.status(201).json({
       success: true,
@@ -224,6 +259,130 @@ router.post('/', async (req, res) => {
     res.status(500).json({ 
       success: false,
       error: '예약 처리 중 오류가 발생했습니다.' 
+    });
+  }
+});
+
+/**
+ * @swagger
+ * /api/bookings/check:
+ *   post:
+ *     summary: 예약 확인 (고객용)
+ *     description: 전화번호로 가장 최신 예약 정보를 확인합니다.
+ *     tags: [Bookings]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - phone
+ *             properties:
+ *               phone:
+ *                 type: string
+ *                 description: 전화번호
+ *                 example: "010-1234-5678"
+ *     responses:
+ *       200:
+ *         description: 예약 확인 성공
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   $ref: '#/components/schemas/Booking'
+ *       400:
+ *         description: 잘못된 요청
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       404:
+ *         description: 예약을 찾을 수 없음
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: 서버 오류
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
+router.post('/check', async (req, res) => {
+  try {
+    const { phone } = req.body;
+    
+    // 입력값 검증
+    if (!phone) {
+      return res.status(400).json({
+        success: false,
+        error: '전화번호를 입력해주세요.'
+      });
+    }
+
+    // 전화번호 형식 검증 (010-1234-5678 또는 01012345678 둘 다 허용)
+    const phonePattern = /^010[-]?\d{4}[-]?\d{4}$/;
+    if (!phonePattern.test(phone.trim())) {
+      return res.status(400).json({
+        success: false,
+        error: '올바른 전화번호 형식을 입력해주세요. (예: 010-1234-5678 또는 01012345678)'
+      });
+    }
+
+    // 전화번호를 표준 형식(대시 포함)으로 변환
+    const formattedPhone = phone.trim().replace(/(\d{3})(\d{4})(\d{4})/, '$1-$2-$3');
+
+    // 해당 전화번호의 가장 최신 예약 조회
+    const booking = await Booking.findOne({
+      where: {
+        customer_phone: formattedPhone
+      },
+      order: [['created_at', 'DESC']] // 최신 예약 우선
+    });
+
+    if (!booking) {
+      logger.warn('예약 확인 실패 - 예약 없음', { phone: formattedPhone });
+      return res.status(404).json({
+        success: false,
+        error: '해당 전화번호로 등록된 예약을 찾을 수 없습니다.'
+      });
+    }
+
+    logger.info('고객 예약 확인 성공', { 
+      bookingId: booking.booking_id,
+      customerPhone: booking.customer_phone
+    });
+
+    res.json({
+      success: true,
+      data: {
+        booking_id: booking.booking_id,
+        customer_name: booking.customer_name,
+        customer_phone: booking.customer_phone,
+        customer_address: booking.customer_address,
+        service_type: booking.service_type,
+        service_date: booking.service_date,
+        service_time: booking.service_time,
+        special_requests: booking.special_requests,
+        status: booking.status,
+        created_at: booking.created_at
+      }
+    });
+  } catch (error) {
+    logger.error('예약 확인 중 오류', { 
+      error: error.message, 
+      requestBody: req.body 
+    });
+    res.status(500).json({
+      success: false,
+      error: '예약 확인 중 오류가 발생했습니다.'
     });
   }
 });

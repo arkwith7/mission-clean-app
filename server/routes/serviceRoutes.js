@@ -1,5 +1,8 @@
 const express = require('express');
 const router = express.Router();
+const { authenticateToken, requireManager } = require('../middleware/auth');
+const logger = require('../utils/logger');
+const smsService = require('../utils/smsService');
 
 /**
  * @swagger
@@ -209,6 +212,162 @@ router.get('/:serviceId', (req, res) => {
     success: true,
     data: service
   });
+});
+
+/**
+ * @swagger
+ * /api/services/sms/status:
+ *   get:
+ *     summary: SMS 서비스 상태 확인
+ *     description: SMS 서비스 설정 및 상태를 확인합니다. (관리자/매니저만 접근 가능)
+ *     tags: [Services]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: SMS 서비스 상태 조회 성공
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     provider:
+ *                       type: string
+ *                       example: "ncloud-sens"
+ *                     configured:
+ *                       type: boolean
+ *                       example: false
+ *                     enabled:
+ *                       type: boolean
+ *                       example: false
+ *                     mode:
+ *                       type: string
+ *                       example: "simulation"
+ *                     from:
+ *                       type: string
+ *                       example: "010-9171-8465"
+ */
+router.get('/sms/status', authenticateToken, requireManager, async (req, res) => {
+  try {
+    const status = smsService.getStatus();
+    
+    logger.info('SMS 서비스 상태 조회', { 
+      userId: req.user.user_id,
+      status: status
+    });
+
+    res.json({
+      success: true,
+      data: status
+    });
+  } catch (error) {
+    logger.error('SMS 서비스 상태 조회 중 오류', { 
+      error: error.message, 
+      userId: req.user?.user_id 
+    });
+    res.status(500).json({
+      success: false,
+      error: 'SMS 서비스 상태 조회 중 오류가 발생했습니다.'
+    });
+  }
+});
+
+/**
+ * @swagger
+ * /api/services/sms/test:
+ *   post:
+ *     summary: SMS 테스트 발송
+ *     description: 테스트 SMS를 발송합니다. (관리자/매니저만 접근 가능)
+ *     tags: [Services]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - message
+ *             properties:
+ *               message:
+ *                 type: string
+ *                 example: "테스트 메시지입니다."
+ *               to:
+ *                 type: string
+ *                 example: "010-9171-8465"
+ *     responses:
+ *       200:
+ *         description: SMS 테스트 발송 성공
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "SMS 전송 완료 (시뮬레이션 모드)"
+ */
+router.post('/sms/test', authenticateToken, requireManager, async (req, res) => {
+  try {
+    const { message, to } = req.body;
+    
+    if (!message) {
+      return res.status(400).json({
+        success: false,
+        error: '메시지 내용을 입력해주세요.'
+      });
+    }
+
+    const recipient = to || process.env.TECHNICIAN_PHONE || '010-9171-8465';
+    
+    // 테스트 예약 데이터 생성
+    const testBookingData = {
+      booking_id: 'TEST-' + Date.now(),
+      customer_name: '테스트 관리자',
+      customer_phone: '010-0000-0000',
+      customer_address: '테스트 주소',
+      service_type: '테스트 서비스',
+      service_date: new Date().toISOString().split('T')[0],
+      service_time: 'morning',
+      special_requests: message
+    };
+
+    const result = await smsService.sendBookingNotification(testBookingData);
+    
+    logger.info('SMS 테스트 발송', { 
+      userId: req.user.user_id,
+      to: recipient,
+      result: result
+    });
+
+    res.json({
+      success: result.success,
+      message: result.message,
+      data: {
+        provider: result.provider,
+        simulationMode: result.simulationMode || false
+      }
+    });
+  } catch (error) {
+    logger.error('SMS 테스트 발송 중 오류', { 
+      error: error.message, 
+      userId: req.user?.user_id 
+    });
+    res.status(500).json({
+      success: false,
+      error: 'SMS 테스트 발송 중 오류가 발생했습니다.'
+    });
+  }
 });
 
 module.exports = router; 

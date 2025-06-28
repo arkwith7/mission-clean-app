@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 
 interface AuthModalProps {
@@ -9,6 +9,11 @@ interface AuthModalProps {
 
 const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'login' }) => {
   const [mode, setMode] = useState<'login' | 'register'>(initialMode)
+
+  // initialMode가 변경될 때마다 mode state 업데이트
+  useEffect(() => {
+    setMode(initialMode)
+  }, [initialMode])
   const [formData, setFormData] = useState({
     username: '',
     email: '',

@@ -121,9 +121,36 @@ const requireManager = (req, res, next) => {
   next();
 };
 
+// 특정 역할 권한 확인 미들웨어 (배열 지원)
+const requireRole = (roles) => {
+  return (req, res, next) => {
+    if (!req.user) {
+      logger.error('requireRole: 사용자 정보가 없습니다.');
+      return res.status(401).json({ 
+        success: false, 
+        error: '인증이 필요합니다.' 
+      });
+    }
+
+    if (!roles.includes(req.user.role)) {
+      logger.warn('권한 없는 접근 시도', { 
+        userId: req.user.user_id, 
+        userRole: req.user.role, 
+        requiredRoles: roles 
+      });
+      return res.status(403).json({ 
+        success: false, 
+        error: `${roles.join(' 또는 ')} 권한이 필요합니다.` 
+      });
+    }
+    next();
+  };
+};
+
 module.exports = {
   generateToken,
   authenticateToken,
   requireAdmin,
-  requireManager
+  requireManager,
+  requireRole
 }; 

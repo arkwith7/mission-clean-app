@@ -7,7 +7,7 @@ const HeroSection = () => {
           <div className="text-center lg:text-left">
             {/* Badge */}
             <div className="inline-block bg-gradient-to-r from-teal-100 to-cyan-100 text-teal-800 px-6 py-3 rounded-full text-sm font-bold mb-6 shadow-sm border border-teal-200">
-              🔥 6월 말까지 특가! 20% 할인
+              🔥 7월 말까지 특가! 20% 할인
             </div>
 
             {/* Main Headline */}
@@ -41,12 +41,19 @@ const HeroSection = () => {
               >
                 📞 010-9171-8465 전화 상담
               </a>
-              <button 
-                className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white px-8 py-5 rounded-xl font-bold text-lg transition-all transform hover:scale-105 shadow-xl hover:shadow-2xl"
-                onClick={() => document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })}
+              <a 
+                href="#contact"
+                className="inline-block bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white px-8 py-5 rounded-xl font-bold text-lg transition-all transform hover:scale-105 shadow-xl hover:shadow-2xl text-center"
+                onClick={(e) => {
+                  e.preventDefault();
+                  const contactElement = document.getElementById('contact');
+                  if (contactElement) {
+                    contactElement.scrollIntoView({ behavior: 'smooth' });
+                  }
+                }}
               >
                 🎯 지금 20% 할인 예약하기
-              </button>
+              </a>
             </div>
 
             {/* Trust Indicators */}

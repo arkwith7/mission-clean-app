@@ -68,6 +68,7 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // API Routes
 app.use('/api/auth', require('./routes/authRoutes'));
+app.use('/api/users', require('./routes/userRoutes'));
 app.use('/api/bookings', require('./routes/bookingRoutes'));
 app.use('/api/customers', require('./routes/customerRoutes'));
 app.use('/api/aircon-specs', require('./routes/airconSpecRoutes'));

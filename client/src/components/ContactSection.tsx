@@ -1,7 +1,9 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { bookingAPI, type BookingData } from '../services/api'
+import { useBooking } from '../contexts/BookingContext'
 
 const ContactSection = () => {
+  const { selectedService } = useBooking()
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
@@ -13,6 +15,16 @@ const ContactSection = () => {
   })
 
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  // 선택된 서비스가 있을 때 폼 데이터 업데이트
+  useEffect(() => {
+    if (selectedService) {
+      setFormData(prev => ({
+        ...prev,
+        serviceType: selectedService.serviceType
+      }))
+    }
+  }, [selectedService])
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target
@@ -157,6 +169,18 @@ const ContactSection = () => {
             <h3 className="text-2xl font-bold text-gray-900 mb-6 text-center">
               📝 온라인 예약 신청
             </h3>
+            
+            {/* 선택된 서비스 표시 */}
+            {selectedService && (
+              <div className="bg-cyan-50 border border-cyan-200 rounded-xl p-4 mb-6">
+                <h4 className="font-bold text-cyan-800 mb-2">선택하신 서비스</h4>
+                <div className="flex justify-between items-center">
+                  <span className="text-cyan-700 font-semibold">{selectedService.serviceName}</span>
+                  <span className="text-cyan-600 font-bold">{selectedService.price}</span>
+                </div>
+                <p className="text-cyan-600 text-sm mt-2">{selectedService.description}</p>
+              </div>
+            )}
 
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -275,7 +299,7 @@ const ContactSection = () => {
               </div>
 
               <div className="bg-teal-50 p-4 rounded-lg border border-teal-200">
-                <h4 className="font-bold text-teal-800 mb-2">🎯 6월 특가 혜택</h4>
+                <h4 className="font-bold text-teal-800 mb-2">🎯 7월 특가 혜택</h4>
                 <ul className="text-teal-700 space-y-1 text-sm">
                   <li>• 모든 서비스 20% 할인</li>
                   <li>• 대전 중구 주민 추가 10% 할인</li>

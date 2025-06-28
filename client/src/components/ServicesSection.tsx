@@ -1,4 +1,17 @@
+import { useBooking } from '../contexts/BookingContext'
+
 const ServicesSection = () => {
+  const { setSelectedService } = useBooking()
+
+  // 서비스 이름을 백엔드에서 요구하는 serviceType으로 변환
+  const getServiceType = (title: string) => {
+    if (title.includes('벽걸이형')) return '벽걸이형'
+    if (title.includes('스탠드형')) return '스탠드형'
+    if (title.includes('1way')) return '시스템1way'
+    if (title.includes('4way')) return '시스템4way'
+    if (title.includes('실외기')) return '실외기'
+    return '2대이상'
+  }
   const services = [
     {
       title: "벽걸이형 에어컨 청소",
@@ -119,7 +132,15 @@ const ServicesSection = () => {
                   ))}
                 </ul>
 
-                <button className="w-full bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white py-4 rounded-xl font-semibold transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1">
+                <button 
+                  className="w-full bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white py-4 rounded-xl font-semibold transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1"
+                  onClick={() => setSelectedService({
+                    serviceType: getServiceType(service.title),
+                    serviceName: service.title,
+                    price: service.price,
+                    description: service.features.join(', ')
+                  })}
+                >
                   예약하기
                 </button>
               </div>
@@ -137,7 +158,7 @@ const ServicesSection = () => {
               에어컨 2대 이상 청소를 원하시는 경우 별도 상담을 통해 최적의 가격을 제안해드립니다.
             </p>
             <div className="bg-white rounded-lg p-4 inline-block shadow-sm">
-              <p className="text-orange-600 font-semibold">📞 상담 문의: 010-8282-8282</p>
+              <p className="text-orange-600 font-semibold">📞 상담 문의: 010-9171-8465</p>
             </div>
           </div>
         </div>

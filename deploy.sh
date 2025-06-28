@@ -3,6 +3,45 @@
 # Exit immediately if a command exits with a non-zero status.
 set -e
 
+# --- 환경변수 파일 보안 체크 ---
+echo "🔒 [보안 체크] 환경변수 파일 확인 중..."
+
+if [ ! -f "env.production" ]; then
+    echo "❌ ERROR: env.production 파일이 없습니다!"
+    echo ""
+    echo "📋 해결방법:"
+    echo "1. cp env.production.example env.production"
+    echo "2. vim env.production  # 실제 운영 값으로 수정"
+    echo ""
+    echo "🔐 중요: 민감한 정보를 포함한 실제 값을 입력하세요:"
+    echo "   - JWT_SECRET (32자 이상)"
+    echo "   - NCLOUD_ACCESS_KEY"
+    echo "   - NCLOUD_SECRET_KEY"
+    echo "   - ADMIN_PASSWORD"
+    echo ""
+    exit 1
+fi
+
+# 환경변수 파일에서 필수 설정 확인
+source env.production
+
+if [ -z "$JWT_SECRET" ] || [ "$JWT_SECRET" = "실제_강력한_JWT_시크릿_키를_여기에_입력_최소_32자이상" ]; then
+    echo "❌ ERROR: JWT_SECRET이 설정되지 않았습니다!"
+    echo "🔐 env.production 파일에서 강력한 JWT_SECRET을 설정하세요."
+    exit 1
+fi
+
+if [ "$SMS_ENABLED" = "true" ]; then
+    if [ -z "$NCLOUD_ACCESS_KEY" ] || [ "$NCLOUD_ACCESS_KEY" = "실제_네이버클라우드_액세스키" ]; then
+        echo "❌ ERROR: NCLOUD_ACCESS_KEY가 설정되지 않았습니다!"
+        echo "📱 SMS 기능을 위해 네이버 클라우드 API 키를 설정하세요."
+        exit 1
+    fi
+fi
+
+echo "✅ [보안 체크] 환경변수 파일 확인 완료!"
+echo ""
+
 # --- Configuration ---
 # Your domain names
 domains=(aircleankorea.com www.aircleankorea.com)
