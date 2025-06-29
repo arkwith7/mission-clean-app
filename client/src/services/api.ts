@@ -16,6 +16,7 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  withCredentials: true,
 })
 
 // 토큰을 API 요청에 자동으로 추가하는 인터셉터
@@ -323,6 +324,19 @@ export const dashboardAPI = {
       console.error('대시보드 통계 조회 중 오류:', error)
       throw error // 오류를 다시 throw하여 호출 측에서 처리할 수 있도록 함
     }
+  },
+}
+
+export const captchaAPI = {
+  // CAPTCHA 생성
+  generateCaptcha: async (type: 'math' | 'korean' = 'math') => {
+    const response = await api.get(`/captcha/generate?type=${type}`)
+    return response.data
+  },
+  // CAPTCHA 검증
+  verifyCaptcha: async (id: string, answer: string) => {
+    const response = await api.post('/captcha/verify', { id, answer })
+    return response.data
   },
 }
 

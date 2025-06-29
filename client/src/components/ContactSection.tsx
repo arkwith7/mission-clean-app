@@ -1,9 +1,15 @@
 import { useState, useEffect } from 'react'
-import { bookingAPI, type BookingData } from '../services/api'
+import { bookingAPI, captchaAPI } from '../services/api'
 import { useBooking } from '../contexts/BookingContext'
-import { generateMathCaptcha, verifyCaptcha, type CaptchaChallenge } from '../utils/captcha'
 import PrivacyConsentModal from './PrivacyConsentModal'
 import PrivacyPolicyModal from './PrivacyPolicyModal'
+import type { BookingData } from '../services/api'
+
+interface Captcha {
+  id: string
+  question: string
+  type: 'math' | 'korean'
+}
 
 const ContactSection = () => {
   const { selectedService } = useBooking()
@@ -11,25 +17,40 @@ const ContactSection = () => {
     name: '',
     phone: '',
     address: '',
-    serviceType: '',
+    serviceType: '벽걸이형',
     message: '',
     preferredDate: '',
-    preferredTime: ''
+    preferredTime: '',
   })
 
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [captcha, setCaptcha] = useState<CaptchaChallenge | null>(null)
-  const [captchaAnswer, setCaptchaAnswer] = useState('')
-  const [captchaError, setCaptchaError] = useState('')
-  
-  // 개인정보 동의 관련 상태
   const [privacyConsent, setPrivacyConsent] = useState(false)
   const [showPrivacyConsentModal, setShowPrivacyConsentModal] = useState(false)
   const [showPrivacyPolicyModal, setShowPrivacyPolicyModal] = useState(false)
+  
+  // CAPTCHA 관련 상태
+  const [captcha, setCaptcha] = useState<Captcha | null>(null)
+  const [captchaAnswer, setCaptchaAnswer] = useState('')
+  const [captchaError, setCaptchaError] = useState('')
 
-  // CAPTCHA 생성
+  const fetchCaptcha = async () => {
+    try {
+      console.log('🔄 CAPTCHA 생성 요청 중...')
+      const response = await captchaAPI.generateCaptcha('math')
+      console.log('✅ CAPTCHA 생성 응답:', response)
+      if (response.success) {
+        setCaptcha(response.data)
+        setCaptchaError('')
+        console.log('✅ CAPTCHA 설정 완료:', response.data)
+      }
+    } catch (error) {
+      console.error('❌ CAPTCHA 생성 실패:', error)
+      setCaptchaError('보안문자를 불러올 수 없습니다.')
+    }
+  }
+
   useEffect(() => {
-    setCaptcha(generateMathCaptcha())
+    fetchCaptcha()
   }, [])
 
   // 선택된 서비스가 있을 때 폼 데이터 업데이트
@@ -42,48 +63,45 @@ const ContactSection = () => {
     }
   }, [selectedService])
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
-    setFormData(prev => ({ ...prev, [name]: value }))
-  }
-
-  const handleCaptchaRefresh = () => {
-    setCaptcha(generateMathCaptcha())
-    setCaptchaAnswer('')
-    setCaptchaError('')
+    setFormData(prev => ({
+      ...prev,
+      [name]: value,
+    }))
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    // 개인정보 동의 확인
     if (!privacyConsent) {
       alert('개인정보 수집·이용에 동의해주세요.')
       return
     }
     
-    // CAPTCHA 검증
-    if (!captcha || !verifyCaptcha(captchaAnswer, captcha.answer as number)) {
-      setCaptchaError('보안 문자를 다시 확인해주세요.')
+    if (!captcha || !captchaAnswer) {
+      setCaptchaError('보안 문자를 입력해주세요.')
       return
     }
     
-    setCaptchaError('')
     setIsSubmitting(true)
-    
+    setCaptchaError('')
+
     try {
+      console.log('🔐 CAPTCHA 검증 시도:', { id: captcha.id, answer: captchaAnswer })
+      // 1. 서버에 CAPTCHA 검증 요청
+      const verifyResponse = await captchaAPI.verifyCaptcha(captcha.id, captchaAnswer)
+      console.log('✅ CAPTCHA 검증 성공:', verifyResponse)
+
+      // 2. CAPTCHA 검증 성공 시, 예약 데이터 전송
       const bookingData: BookingData = {
-        name: formData.name,
-        phone: formData.phone,
-        address: formData.address,
-        serviceType: formData.serviceType,
-        preferredDate: formData.preferredDate || undefined,
-        preferredTime: formData.preferredTime || undefined,
-        message: formData.message || undefined,
+        ...formData,
         privacyConsent: privacyConsent,
       }
 
+      console.log('📋 예약 데이터 전송:', bookingData)
       const response = await bookingAPI.createBooking(bookingData)
+      console.log('✅ 예약 생성 성공:', response)
       
       alert(`예약 신청이 완료되었습니다! 
 예약번호: ${response.bookingId}
@@ -94,25 +112,30 @@ const ContactSection = () => {
         name: '',
         phone: '',
         address: '',
-        serviceType: '',
+        serviceType: '벽걸이형',
         message: '',
         preferredDate: '',
-        preferredTime: ''
+        preferredTime: '',
       })
-      
-      // 개인정보 동의 초기화
       setPrivacyConsent(false)
-      
-      // CAPTCHA 재생성
-      setCaptcha(generateMathCaptcha())
       setCaptchaAnswer('')
+      fetchCaptcha() // 새 CAPTCHA 불러오기
       
-    } catch (error) {
-      // 프로덕션에서는 에러 로깅을 최소화
-      if (import.meta.env.DEV) {
-        console.error('Booking error:', error)
+    } catch (error: unknown) {
+      console.error('❌ 오류 발생:', error)
+      // CAPTCHA 오류 또는 예약 오류 처리
+      if (typeof error === 'object' && error !== null && 'response' in error) {
+        const err = error as { response?: { data?: { error?: string } } };
+        console.error('❌ 서버 오류 응답:', err.response?.data)
+        if (err.response?.data?.error) {
+          setCaptchaError(err.response.data.error);
+        } else {
+          alert('신청 중 오류가 발생했습니다. 아래 예약 양식을 다시 시도해주시거나 새로고침 후 재시도해주세요.');
+        }
+      } else {
+        alert('예상치 못한 오류가 발생했습니다. 새로고침 후 다시 시도해주세요.');
       }
-      alert('신청 중 오류가 발생했습니다. 아래 예약 양식을 다시 시도해주시거나 새로고침 후 재시도해주세요.')
+      fetchCaptcha() // 오류 발생 시 새 CAPTCHA 불러오기
     } finally {
       setIsSubmitting(false)
     }
@@ -425,39 +448,30 @@ const ContactSection = () => {
               {/* CAPTCHA 섹션 */}
               <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
                 <h4 className="font-semibold text-gray-700 mb-3">🔒 보안 확인</h4>
-                {captcha && (
-                  <div className="space-y-3">
-                    <div className="flex items-center space-x-3">
-                      <div className="bg-white px-4 py-2 rounded border border-gray-300 font-mono text-lg min-w-0 flex-1">
-                        {captcha.question}
-                      </div>
-                      <button
-                        type="button"
-                        onClick={handleCaptchaRefresh}
-                        className="bg-gray-500 hover:bg-gray-600 text-white px-3 py-2 rounded text-sm transition-colors"
-                        title="새로운 보안 문자 생성"
-                      >
-                        🔄
-                      </button>
-                    </div>
-                    <div>
-                      <input
-                        type="text"
-                        value={captchaAnswer}
-                        onChange={(e) => {
-                          setCaptchaAnswer(e.target.value)
-                          setCaptchaError('')
-                        }}
-                        placeholder="위의 계산 결과를 입력하세요"
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        required
-                      />
-                    </div>
-                    {captchaError && (
-                      <p className="text-red-600 text-sm">{captchaError}</p>
-                    )}
+                <div className="flex items-center space-x-2 mt-1">
+                  <div className="flex-shrink-0 bg-gray-200 px-4 py-3 rounded-l-lg text-gray-700 font-mono text-lg select-none">
+                    {captcha ? captcha.question : '로딩...'}
                   </div>
-                )}
+                  <input
+                    type="text"
+                    id="captcha"
+                    value={captchaAnswer}
+                    onChange={(e) => setCaptchaAnswer(e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-r-lg focus:ring-2 focus:ring-blue-500"
+                    placeholder="정답을 입력하세요"
+                  />
+                  <button 
+                    type="button" 
+                    onClick={fetchCaptcha} 
+                    className="p-3 text-gray-600 hover:text-blue-600" 
+                    title="새로고침"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h5M20 20v-5h-5M20 4h-5v5M4 20h5v-5" />
+                    </svg>
+                  </button>
+                </div>
+                {captchaError && <p className="text-sm text-red-600 mt-2">{captchaError}</p>}
               </div>
 
               <button
