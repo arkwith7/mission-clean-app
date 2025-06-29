@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Mission Clean App - 개선된 컨테이너 관리 도구
+# Mission Clean App - 컨테이너 관리 도구
 # 사용법: ./manage.sh [명령어]
 
 set -e
@@ -55,114 +55,10 @@ setup_environment() {
 ENVIRONMENT=$(detect_environment)
 setup_environment "$ENVIRONMENT"
 
-# 실제 서비스 가용성 테스트 함수들
-test_website_accessibility() {
-    if [ "$ENVIRONMENT" = "prod" ]; then
-        local response=$(curl -s -o /dev/null -w "%{http_code}" https://aircleankorea.com 2>/dev/null || echo "000")
-        if [ "$response" = "200" ]; then
-            echo "🟢 웹사이트 정상"
-        else
-            echo "🔴 웹사이트 이상"
-        fi
-    else
-        echo "➖ 개발환경"
-    fi
-}
-
-test_api_accessibility() {
-    if [ "$ENVIRONMENT" = "prod" ]; then
-        local response=$(curl -s https://aircleankorea.com/api/services 2>/dev/null | grep -q "success" && echo "OK" || echo "FAIL")
-        if [ "$response" = "OK" ]; then
-            echo "🟢 API 정상"
-        else
-            echo "🔴 API 이상"
-        fi
-    else
-        echo "➖ 개발환경"
-    fi
-}
-
-check_ssl_certificate() {
-    if [ "$ENVIRONMENT" = "prod" ]; then
-        if [ -f "./certbot/conf/live/aircleankorea.com/fullchain.pem" ]; then
-            local cert_expiry=$(openssl x509 -in ./certbot/conf/live/aircleankorea.com/fullchain.pem -noout -enddate 2>/dev/null | cut -d= -f2)
-            if [ -n "$cert_expiry" ]; then
-                echo "🟢 SSL 인증서 정상"
-            else
-                echo "🟢 SSL 파일 존재"
-            fi
-        else
-            # 실제 HTTPS 연결 테스트로 대체
-            local ssl_test=$(curl -s -o /dev/null -w "%{http_code}" https://aircleankorea.com 2>/dev/null || echo "000")
-            if [ "$ssl_test" = "200" ]; then
-                echo "🟢 SSL 연결 정상"
-            else
-                echo "🔴 SSL 연결 이상"
-            fi
-        fi
-    else
-        echo "➖ 개발환경"
-    fi
-}
-
-# 개선된 서비스 상태 확인 함수
-get_enhanced_service_status() {
-    local service=$1
-    local container=$2
-    
-    # 컨테이너 실행 상태 확인
-    if ! docker ps --format "{{.Names}}" | grep -q "^$container$"; then
-        if docker ps -a --format "{{.Names}}" | grep -q "^$container$"; then
-            echo "🔴 정지됨"
-        else
-            echo "⚪ 없음"
-        fi
-        return
-    fi
-    
-    # 특별 처리: certbot의 경우 SSL 인증서 존재 여부로 판단
-    if [ "$service" = "certbot" ]; then
-        if [ -f "./certbot/conf/live/aircleankorea.com/fullchain.pem" ]; then
-            echo "🟢 SSL완료"
-        else
-            echo "🔴 SSL미완료"
-        fi
-        return
-    fi
-    
-    # 일반 컨테이너 헬스체크
-    local health=$(docker inspect --format='{{.State.Health.Status}}' "$container" 2>/dev/null || echo "없음")
-    
-    case $health in
-        "healthy")
-            echo "🟢 정상"
-            ;;
-        "unhealthy")
-            # Nginx의 경우 실제 웹사이트 접근성으로 재확인
-            if [ "$service" = "nginx" ] && [ "$ENVIRONMENT" = "prod" ]; then
-                local web_test=$(curl -s -o /dev/null -w "%{http_code}" https://aircleankorea.com 2>/dev/null || echo "000")
-                if [ "$web_test" = "200" ]; then
-                    echo "🟢 정상 (웹사이트 작동)"
-                else
-                    echo "🔴 이상"
-                fi
-            else
-                echo "🔴 이상"
-            fi
-            ;;
-        "starting")
-            echo "🟡 시작중"
-            ;;
-        *)
-            echo "🟢 실행중"
-            ;;
-    esac
-}
-
 # 도움말 표시
 show_help() {
-    echo -e "${BLUE}🎛️  Mission Clean App - 개선된 컨테이너 관리 도구${NC}"
-    echo -e "${BLUE}===============================================${NC}"
+    echo -e "${BLUE}🎛️  Mission Clean App - 컨테이너 관리 도구${NC}"
+    echo -e "${BLUE}=========================================${NC}"
     echo -e "${PURPLE}현재 환경: $ENV_NAME${NC}"
     echo -e "${PURPLE}컴포즈 파일: $COMPOSE_FILE${NC}"
     echo ""
@@ -171,7 +67,6 @@ show_help() {
     echo -e "  ${CYAN}./manage.sh monitor${NC}       - 실시간 모니터링"
     echo -e "  ${CYAN}./manage.sh health${NC}        - 헬스체크 확인"
     echo -e "  ${CYAN}./manage.sh logs [서비스]${NC}  - 로그 확인"
-    echo -e "  ${CYAN}./manage.sh realtime${NC}      - 실시간 서비스 가용성"
     echo ""
     echo -e "${GREEN}🔧 제어:${NC}"
     echo -e "  ${CYAN}./manage.sh start [서비스]${NC} - 서비스 시작"
@@ -187,45 +82,51 @@ show_help() {
     echo -e "  ${YELLOW}db${NC}       - PostgreSQL 데이터베이스"
     echo -e "  ${YELLOW}backend${NC}  - Node.js API 서버"
     echo -e "  ${YELLOW}frontend${NC} - React 프론트엔드"
-    if [ "$ENVIRONMENT" = "prod" ]; then
-        echo -e "  ${YELLOW}nginx${NC}    - Nginx 웹서버"
-        echo -e "  ${YELLOW}certbot${NC}  - SSL 인증서 관리"
-    fi
+    echo -e "  ${YELLOW}nginx${NC}    - Nginx 웹서버"
+    echo -e "  ${YELLOW}certbot${NC}  - SSL 인증서 관리"
     echo ""
     echo -e "${GREEN}사용 예시:${NC}"
     echo -e "  ${CYAN}./manage.sh status${NC}            # 전체 상태 확인"
     echo -e "  ${CYAN}./manage.sh logs backend${NC}      # 백엔드 로그 확인"
     echo -e "  ${CYAN}./manage.sh restart frontend${NC}  # 프론트엔드 재시작"
-    echo -e "  ${CYAN}./manage.sh realtime${NC}          # 실시간 가용성 모니터링"
+    echo -e "  ${CYAN}./manage.sh monitor${NC}           # 실시간 모니터링"
     echo ""
 }
 
-# 개선된 서비스 상태 확인
+# 서비스 상태 확인
 check_status() {
     echo -e "${BLUE}📊 서비스 상태 확인 ($ENV_NAME)${NC}"
     echo -e "${BLUE}================================${NC}"
     
-    if [ "$ENVIRONMENT" = "prod" ]; then
-        echo -e "\n${GREEN}🌐 실시간 서비스 가용성:${NC}"
-        printf "%-20s %-20s %-20s\n" "웹사이트" "API" "SSL인증서"
-        echo "────────────────────────────────────────────────────────────────"
-        printf "%-20s %-20s %-20s\n" "$(test_website_accessibility)" "$(test_api_accessibility)" "$(check_ssl_certificate)"
-        echo ""
-    fi
-    
-    echo -e "${GREEN}🐳 Docker Compose 서비스:${NC}"
+    echo -e "\n${GREEN}🐳 Docker Compose 서비스:${NC}"
     docker-compose -f $COMPOSE_FILE ps
     
     echo -e "\n${GREEN}📦 컨테이너 상세 정보:${NC}"
-    printf "%-20s %-20s %-15s\n" "서비스" "컨테이너" "상태"
-    echo "───────────────────────────────────────────────────────────────"
+    printf "%-20s %-15s %-10s %-15s\n" "서비스" "컨테이너" "상태" "헬스체크"
+    echo "────────────────────────────────────────────────────────────────"
     
     for i in "${!SERVICES[@]}"; do
         service="${SERVICES[$i]}"
         container="${SERVICE_CONTAINERS[$i]}"
-        status=$(get_enhanced_service_status "$service" "$container")
         
-        printf "%-20s %-20s %-15s\n" "$service" "$container" "$status"
+        if docker ps --format "{{.Names}}" | grep -q "^$container$"; then
+            status="🟢 실행중"
+            health=$(docker inspect --format='{{.State.Health.Status}}' "$container" 2>/dev/null || echo "없음")
+            case $health in
+                "healthy") health="🟢 정상" ;;
+                "unhealthy") health="🔴 이상" ;;
+                "starting") health="🟡 시작중" ;;
+                *) health="➖ 없음" ;;
+            esac
+        elif docker ps -a --format "{{.Names}}" | grep -q "^$container$"; then
+            status="🔴 정지됨"
+            health="➖ 없음"
+        else
+            status="⚪ 없음"
+            health="➖ 없음"
+        fi
+        
+        printf "%-20s %-15s %-10s %-15s\n" "$service" "$container" "$status" "$health"
     done
     
     echo -e "\n${GREEN}💻 리소스 사용량:${NC}"
@@ -233,44 +134,6 @@ check_status() {
     
     echo -e "\n${GREEN}💾 디스크 사용량:${NC}"
     docker system df
-}
-
-# 실시간 서비스 가용성 모니터링 (새 기능)
-realtime_monitoring() {
-    if [ "$ENVIRONMENT" != "prod" ]; then
-        echo -e "${YELLOW}⚠️ 실시간 가용성 모니터링은 프로덕션 환경에서만 지원됩니다.${NC}"
-        return
-    fi
-    
-    echo -e "${BLUE}🔴 실시간 서비스 가용성 모니터링 (Ctrl+C로 종료)${NC}"
-    
-    trap 'echo -e "\n${YELLOW}모니터링 종료${NC}"; exit 0' INT
-    
-    while true; do
-        clear
-        echo -e "${PURPLE}🎛️  Mission Clean App - 실시간 가용성 모니터링${NC}"
-        echo -e "${PURPLE}$(date '+%Y-%m-%d %H:%M:%S')${NC}"
-        echo -e "${PURPLE}===============================================${NC}"
-        
-        echo -e "\n${GREEN}🌐 핵심 서비스 가용성:${NC}"
-        printf "%-20s %-20s %-20s\n" "웹사이트" "API 서버" "SSL 인증서"
-        echo "────────────────────────────────────────────────────────────────"
-        printf "%-20s %-20s %-20s\n" "$(test_website_accessibility)" "$(test_api_accessibility)" "$(check_ssl_certificate)"
-        
-        echo -e "\n${GREEN}📦 컨테이너 상태:${NC}"
-        for i in "${!SERVICES[@]}"; do
-            service="${SERVICES[$i]}"
-            container="${SERVICE_CONTAINERS[$i]}"
-            status=$(get_enhanced_service_status "$service" "$container")
-            echo -e "  $service: $status"
-        done
-        
-        echo -e "\n${GREEN}💻 리소스 사용량:${NC}"
-        docker stats --no-stream --format "table {{.Container}}\t{{.CPUPerc}}\t{{.MemUsage}}\t{{.NetIO}}" | head -6
-        
-        echo -e "\n${CYAN}3초 후 업데이트... (Ctrl+C로 종료)${NC}"
-        sleep 3
-    done
 }
 
 # 실시간 모니터링
@@ -291,12 +154,17 @@ monitor_services() {
         echo -e "\n${GREEN}💻 리소스 사용량:${NC}"
         docker stats --no-stream --format "table {{.Container}}\t{{.CPUPerc}}\t{{.MemUsage}}\t{{.NetIO}}" | head -6
         
-        echo -e "\n${GREEN}🏥 서비스 상태:${NC}"
-        for i in "${!SERVICES[@]}"; do
-            service="${SERVICES[$i]}"
-            container="${SERVICE_CONTAINERS[$i]}"
-            status=$(get_enhanced_service_status "$service" "$container")
-            echo -e "  $service: $status"
+        echo -e "\n${GREEN}🏥 헬스체크:${NC}"
+        for container in "${SERVICE_CONTAINERS[@]}"; do
+            if docker ps --format "{{.Names}}" | grep -q "^$container$"; then
+                health=$(docker inspect --format='{{.State.Health.Status}}' "$container" 2>/dev/null || echo "없음")
+                case $health in
+                    "healthy") echo -e "  $container: 🟢 정상" ;;
+                    "unhealthy") echo -e "  $container: 🔴 이상" ;;
+                    "starting") echo -e "  $container: 🟡 시작중" ;;
+                    *) echo -e "  $container: ➖ 없음" ;;
+                esac
+            fi
         done
         
         echo -e "\n${CYAN}5초 후 업데이트... (Ctrl+C로 종료)${NC}"
@@ -304,18 +172,10 @@ monitor_services() {
     done
 }
 
-# 개선된 헬스체크 상태 확인
+# 헬스체크 상태 확인
 check_health() {
-    echo -e "${BLUE}🏥 개선된 헬스체크 상태${NC}"
-    echo -e "${BLUE}=========================${NC}"
-    
-    if [ "$ENVIRONMENT" = "prod" ]; then
-        echo -e "\n${GREEN}🌐 실제 서비스 가용성 테스트:${NC}"
-        echo -e "  웹사이트: $(test_website_accessibility)"
-        echo -e "  API 서버: $(test_api_accessibility)"
-        echo -e "  SSL 인증서: $(check_ssl_certificate)"
-        echo ""
-    fi
+    echo -e "${BLUE}🏥 헬스체크 상태${NC}"
+    echo -e "${BLUE}=================${NC}"
     
     for i in "${!SERVICES[@]}"; do
         service="${SERVICES[$i]}"
@@ -324,50 +184,29 @@ check_health() {
         echo -e "\n${YELLOW}📋 $service ($container):${NC}"
         
         if docker ps --format "{{.Names}}" | grep -q "^$container$"; then
-            # 특별 처리: certbot
-            if [ "$service" = "certbot" ]; then
-                if [ -f "./certbot/conf/live/aircleankorea.com/fullchain.pem" ]; then
-                    echo -e "  상태: 🟢 SSL 인증서 발급 완료"
-                    local cert_info=$(openssl x509 -in ./certbot/conf/live/aircleankorea.com/fullchain.pem -noout -enddate 2>/dev/null | cut -d= -f2)
-                    echo -e "  만료: $cert_info"
-                else
-                    echo -e "  상태: 🔴 SSL 인증서 없음"
-                fi
-            else
-                local health=$(docker inspect --format='{{.State.Health.Status}}' "$container" 2>/dev/null || echo "없음")
-                
-                case $health in
-                    "healthy")
-                        echo -e "  상태: 🟢 정상"
-                        ;;
-                    "unhealthy")
-                        echo -e "  상태: 🔴 이상"
-                        if [ "$service" = "nginx" ] && [ "$ENVIRONMENT" = "prod" ]; then
-                            local web_test=$(curl -s -o /dev/null -w "%{http_code}" https://aircleankorea.com 2>/dev/null || echo "000")
-                            if [ "$web_test" = "200" ]; then
-                                echo -e "  실제: 🟢 웹사이트 정상 작동"
-                            fi
-                        fi
-                        local health_log=$(docker inspect --format='{{range .State.Health.Log}}{{.Output}}{{end}}' "$container" 2>/dev/null | tail -1)
-                        echo -e "  오류: $health_log"
-                        ;;
-                    "starting")
-                        echo -e "  상태: 🟡 시작중"
-                        ;;
-                    *)
-                        echo -e "  상태: ➖ 헬스체크 없음"
-                        ;;
-                esac
-            fi
+            health=$(docker inspect --format='{{.State.Health.Status}}' "$container" 2>/dev/null || echo "없음")
             
-            local uptime=$(docker inspect --format='{{.State.StartedAt}}' "$container" 2>/dev/null | cut -c 1-19 || echo "알 수 없음")
+            case $health in
+                "healthy")
+                    echo -e "  상태: 🟢 정상"
+                    ;;
+                "unhealthy")
+                    echo -e "  상태: 🔴 이상"
+                    health_log=$(docker inspect --format='{{range .State.Health.Log}}{{.Output}}{{end}}' "$container" 2>/dev/null | tail -1)
+                    echo -e "  오류: $health_log"
+                    ;;
+                "starting")
+                    echo -e "  상태: 🟡 시작중"
+                    ;;
+                *)
+                    echo -e "  상태: ➖ 헬스체크 없음"
+                    ;;
+            esac
+            
+            uptime=$(docker inspect --format='{{.State.StartedAt}}' "$container" 2>/dev/null | cut -c 1-19 || echo "알 수 없음")
             echo -e "  시작: $uptime"
         else
-            if [ "$service" = "certbot" ] && [ -f "./certbot/conf/live/aircleankorea.com/fullchain.pem" ]; then
-                echo -e "  상태: 🟢 SSL 인증서 발급 완료 (컨테이너 정상 종료됨)"
-            else
-                echo -e "  상태: 🔴 컨테이너 없음"
-            fi
+            echo -e "  상태: 🔴 컨테이너 없음"
         fi
     done
 }
@@ -501,7 +340,6 @@ main() {
         "status") check_status ;;
         "monitor") monitor_services ;;
         "health") check_health ;;
-        "realtime") realtime_monitoring ;;
         "logs") show_logs "$2" ;;
         "start") start_service "$2" ;;
         "stop") stop_service "$2" ;;
