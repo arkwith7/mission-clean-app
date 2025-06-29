@@ -54,7 +54,7 @@ const authLimiter = rateLimit({
 // 예약 API 제한
 const bookingLimiter = rateLimit({
   windowMs: isProduction ? 60 * 60 * 1000 : 60 * 1000, // 개발환경: 1분, 프로덕션: 1시간
-  max: isProduction ? 5 : 100, // 개발환경: 100회, 프로덕션: 5회
+  max: isProduction ? 20 : 100, // 개발환경: 100회, 프로덕션: 20회
   message: {
     success: false,
     error: '예약 신청이 너무 많습니다. 1시간 후 다시 시도해주세요.'

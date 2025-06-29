@@ -394,6 +394,17 @@ app.get('/health', async (req, res) => {
   }
 });
 
+// API Health check endpoint
+app.get('/api/health', async (req, res) => {
+  try {
+    await sequelize.authenticate();
+    res.status(200).json({ status: 'OK', message: 'API and Database connection is healthy.' });
+  } catch (error) {
+    logger.error('API Health check failed: Database connection error.', { error: error.message });
+    res.status(503).json({ status: 'error', message: 'Service Unavailable (DB)' });
+  }
+});
+
 // 404 에러 핸들링
 app.use('*', (req, res) => {
   res.status(404).json({ success: false, error: 'Not Found' });
