@@ -1,7 +1,7 @@
 import axios from 'axios'
 import type { 
   UserResponse, SingleUserResponse, CreateUserData, UpdateUserData,
-  CustomerResponse, SingleCustomerResponse, CreateCustomerData, UpdateCustomerData, CustomerStatsResponse
+  CustomerResponse, SingleCustomerResponse, CreateCustomerData, UpdateCustomerData
 } from '../types/admin'
 
 const API_BASE_URL = import.meta.env.MODE === 'production'
@@ -190,12 +190,6 @@ export const bookingAPI = {
     const response = await api.put(`/bookings/${id}/status`, { status })
     return response.data
   },
-
-  // 예약 통계 조회
-  getBookingStats: async (): Promise<{ success: boolean; data: { overview: { total: number; pending: number; confirmed: number; completed: number; cancelled: number } } }> => {
-    const response = await api.get('/bookings/stats/overview')
-    return response.data
-  },
 }
 
 // User 관리 API
@@ -241,12 +235,6 @@ export const userAPI = {
     const response = await api.patch(`/users/${id}/status`, { status })
     return response.data
   },
-
-  // 사용자 통계 조회
-  getUserStats: async (): Promise<{ success: boolean; data: { overview: { total: number; admin: number; manager: number; customer: number; active: number } } }> => {
-    const response = await api.get('/users/stats/overview')
-    return response.data
-  },
 }
 
 // Customer 관리 API
@@ -287,12 +275,6 @@ export const customerAPI = {
     const response = await api.delete(`/customers/${id}`)
     return response.data
   },
-
-  // 고객 통계 조회
-  getCustomerStats: async (): Promise<CustomerStatsResponse> => {
-    const response = await api.get('/customers/stats/overview')
-    return response.data
-  },
 }
 
 // Dashboard Stats Interface
@@ -327,36 +309,19 @@ export interface DashboardStatsResponse {
 
 // Dashboard API
 export const dashboardAPI = {
-  // 대시보드 통계 조회 (개별 API들을 호출하여 통합)
+  // 대시보드 통계 조회 (통합 API 호출)
   getStats: async (): Promise<DashboardStatsResponse> => {
     try {
-      // 병렬로 모든 통계 데이터 가져오기
-      const [bookingStats, userStats, customerStats] = await Promise.all([
-        bookingAPI.getBookingStats(),
-        userAPI.getUserStats(),
-        customerAPI.getCustomerStats()
-      ])
-
-      // 통합된 대시보드 통계 데이터 구성
-      const dashboardStats: DashboardStats = {
-        bookings: bookingStats.data.overview,
-        users: userStats.data.overview,
-        customers: {
-          total: customerStats.data.overview.total,
-          individual: customerStats.data.overview.individual,
-          corporate: customerStats.data.overview.business, // API에서는 business로 반환
-          marketingConsent: customerStats.data.overview.marketingConsent,
-          smsConsent: customerStats.data.overview.smsConsent
-        }
-      }
-
+      const response = await api.get('/dashboard/stats')
+      
+      // API 응답 데이터 구조에 맞게 반환
       return {
-        success: true,
-        data: dashboardStats
+        success: response.data.success,
+        data: response.data.data
       }
     } catch (error) {
       console.error('대시보드 통계 조회 중 오류:', error)
-      throw error
+      throw error // 오류를 다시 throw하여 호출 측에서 처리할 수 있도록 함
     }
   },
 }

@@ -21,6 +21,10 @@ const { getCSRFToken } = require('./middleware/csrf');
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+// Nginx와 같은 리버스 프록시 뒤에서 실행될 때를 대비
+// 클라이언트의 실제 IP 주소를 Rate Limiter가 인식하도록 함
+app.set('trust proxy', 1); // 1은 첫 번째 프록시를 신뢰한다는 의미
+
 // Swagger definition
 const swaggerDefinition = {
   openapi: '3.0.0',

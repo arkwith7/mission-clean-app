@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import { dashboardAPI } from '../../services/api'
 
 interface Stats {
@@ -200,21 +201,25 @@ const DashboardStats = () => {
       <div className="bg-white rounded-lg shadow-sm p-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">🚀 빠른 실행</h3>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <button className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+          <Link to="/admin/bookings" className="block p-4 text-center border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
             <div className="text-2xl mb-2">📋</div>
             <div className="text-sm font-medium">새 예약 등록</div>
-          </button>
-          <button className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+          </Link>
+          <Link to="/admin/users" className="block p-4 text-center border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
             <div className="text-2xl mb-2">👤</div>
             <div className="text-sm font-medium">회원 추가</div>
-          </button>
-          <button className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+          </Link>
+          <Link to="/admin/customers" className="block p-4 text-center border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
             <div className="text-2xl mb-2">🏢</div>
             <div className="text-sm font-medium">고객 등록</div>
-          </button>
-          <button className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-            <div className="text-2xl mb-2">📊</div>
-            <div className="text-sm font-medium">보고서 생성</div>
+          </Link>
+          <button 
+            disabled 
+            className="p-4 text-center border border-gray-200 rounded-lg bg-gray-100 cursor-not-allowed"
+            title="준비 중인 기능입니다."
+          >
+            <div className="text-2xl mb-2 text-gray-400">📊</div>
+            <div className="text-sm font-medium text-gray-500">보고서 생성</div>
           </button>
         </div>
       </div>
