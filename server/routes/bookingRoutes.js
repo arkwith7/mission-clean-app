@@ -47,6 +47,10 @@ const smsService = require('../utils/smsService');
  *           type: string
  *           description: 추가 요청사항
  *           example: "2층에 위치한 에어컨입니다."
+ *         privacyConsent:
+ *           type: boolean
+ *           description: 개인정보 수집·이용 동의
+ *           example: true
  *     Booking:
  *       type: object
  *       properties:
@@ -94,25 +98,43 @@ const smsService = require('../utils/smsService');
 
 // 입력값 검증 함수
 const validateBookingInput = (data) => {
-  const { name, phone, address, serviceType } = data;
+  const { name, phone, address, serviceType, message, privacyConsent } = data;
   const errors = [];
 
-  if (!name || name.trim().length < 2) {
-    errors.push('유효한 이름을 입력해주세요.');
+  // 개인정보 동의 확인
+  if (privacyConsent !== true) {
+    errors.push('개인정보 수집·이용에 동의해주세요.');
   }
 
-  // 전화번호 형식 검증 (010-1234-5678 또는 01012345678 둘 다 허용)
+  // 이름 검증 (2-20자)
+  if (!name || name.trim().length < 2) {
+    errors.push('유효한 이름을 입력해주세요.');
+  } else if (name.length > 20) {
+    errors.push('이름은 20자 이하로 입력해주세요.');
+  }
+
+  // 전화번호 형식 및 길이 검증 (010-1234-5678 또는 01012345678 둘 다 허용, 최대 20자)
   const phonePattern = /^010[-]?\d{4}[-]?\d{4}$/;
   if (!phone || !phonePattern.test(phone.trim())) {
     errors.push('올바른 전화번호 형식을 입력해주세요. (예: 010-1234-5678 또는 01012345678)');
+  } else if (phone.length > 20) {
+    errors.push('연락처는 20자 이하로 입력해주세요.');
   }
 
+  // 주소 검증 (5-60자)
   if (!address || address.trim().length < 5) {
     errors.push('상세한 주소를 입력해주세요.');
+  } else if (address.length > 60) {
+    errors.push('서비스 주소는 60자 이하로 입력해주세요.');
   }
 
   if (!serviceType || !['벽걸이형', '스탠드형', '시스템1way', '시스템4way', '실외기', '2대이상'].includes(serviceType)) {
     errors.push('올바른 서비스 종류를 선택해주세요.');
+  }
+
+  // 메시지 길이 검증 (140자 제한)
+  if (message && message.length > 140) {
+    errors.push('추가 요청사항은 140자 이하로 입력해주세요.');
   }
 
   return errors;
@@ -169,7 +191,7 @@ router.post('/', async (req, res) => {
     console.log('Raw Request Body:', JSON.stringify(req.body, null, 2));
     console.log('='.repeat(60));
     
-    const { name, phone, address, serviceType, preferredDate, preferredTime, message } = req.body;
+    const { name, phone, address, serviceType, preferredDate, preferredTime, message, privacyConsent } = req.body;
     
     console.log('📋 파싱된 데이터:');
     console.log(`이름: ${name}`);
@@ -179,15 +201,36 @@ router.post('/', async (req, res) => {
     console.log(`희망 날짜: ${preferredDate}`);
     console.log(`희망 시간: ${preferredTime}`);
     console.log(`메시지: ${message}`);
+    console.log(`개인정보 동의: ${privacyConsent}`);
     console.log('='.repeat(60) + '\n');
     
     // 입력값 검증
-    const validationErrors = validateBookingInput({ name, phone, address, serviceType });
+    const validationErrors = validateBookingInput({ name, phone, address, serviceType, message, privacyConsent });
     if (validationErrors.length > 0) {
       logger.warn('예약 신청 입력값 검증 실패', { errors: validationErrors, phone });
       return res.status(400).json({ 
         success: false,
         error: validationErrors.join(' ')
+      });
+    }
+
+    // CAPTCHA 검증 (서버 측)
+    if (!req.session.captchaVerified) {
+      logger.warn('CAPTCHA 검증되지 않은 예약 시도', { phone });
+      return res.status(400).json({
+        success: false,
+        error: '보안 인증이 필요합니다. CAPTCHA를 먼저 완료해주세요.'
+      });
+    }
+
+    // CAPTCHA 검증 만료 확인 (10분)
+    const captchaAge = Date.now() - req.session.captchaVerified.timestamp;
+    if (captchaAge > 10 * 60 * 1000) {
+      delete req.session.captchaVerified;
+      logger.warn('만료된 CAPTCHA로 예약 시도', { phone });
+      return res.status(400).json({
+        success: false,
+        error: 'CAPTCHA 인증이 만료되었습니다. 다시 인증해주세요.'
       });
     }
 
@@ -224,6 +267,9 @@ router.post('/', async (req, res) => {
       serviceType, 
       customerPhone: phone 
     });
+
+    // CAPTCHA 검증 상태 삭제 (한번 사용 후 무효화)
+    delete req.session.captchaVerified;
 
     // 기사에게 SMS 알림 전송
     try {

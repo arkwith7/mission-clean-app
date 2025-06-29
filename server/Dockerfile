@@ -1,8 +1,8 @@
 # Node.js 18 Alpine 이미지 사용
 FROM node:18-alpine
 
-# 필요한 시스템 패키지 설치 (curl과 sqlite3)
-RUN apk add --no-cache curl sqlite
+# 필요한 시스템 패키지 설치 (curl과 wget for healthcheck)
+RUN apk add --no-cache curl wget
 
 # 작업 디렉토리 설정
 WORKDIR /app
@@ -16,7 +16,7 @@ RUN npm ci --only=production && npm cache clean --force
 # 애플리케이션 코드 복사
 COPY . .
 
-# SQLite 데이터베이스 디렉토리 생성 및 권한 설정
+# 데이터 디렉토리 생성 및 권한 설정
 RUN mkdir -p /app/data && chmod 755 /app/data
 
 # 로그 디렉토리 생성 및 모든 권한 부여

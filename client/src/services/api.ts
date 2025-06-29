@@ -63,6 +63,7 @@ export interface BookingData {
   preferredDate?: string
   preferredTime?: string
   message?: string
+  privacyConsent?: boolean
 }
 
 export interface BookingResponse {

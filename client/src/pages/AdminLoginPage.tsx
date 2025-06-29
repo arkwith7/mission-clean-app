@@ -139,12 +139,14 @@ const AdminLoginPage = () => {
             <p className="text-sm text-gray-600">
               로그인에 문제가 있으시면 기술 지원팀에 문의하세요
             </p>
-            <a 
-              href="tel:010-9171-8465"
+            <button 
+              onClick={() => {
+                window.location.href = '/#contact';
+              }}
               className="text-blue-600 hover:text-blue-700 text-sm font-semibold"
             >
-              📞 010-9171-8465
-            </a>
+              📞 온라인 문의
+            </button>
           </div>
         </div>
       </div>

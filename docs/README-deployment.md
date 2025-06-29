@@ -23,8 +23,8 @@
 
 ```
 📁 mission-clean-app/
-├── 🐳 docker-compose.yml          # 메인 프로덕션 구성 (헬스체크, 로깅 포함)
-├── 🐳 docker-compose.prod.yml     # 프로덕션 리소스 제한 설정
+├── 🐳 docker-compose.dev.yml      # 개발환경 구성
+├── 🐳 docker-compose.prod.yml     # 프로덕션 구성 (SSL, 헬스체크, 로깅 포함)
 ├── ⚙️ .env                        # 환경 변수 (env.example에서 복사)
 ├── 📜 scripts/
 │   ├── 🔧 SSL 인증서 관리 스크립트들
@@ -43,7 +43,8 @@
 ```
 
 ### 🔥 **주요 변경사항**
-- ✅ **불필요한 파일 제거**: `docker-compose-fixed.yml`, `nginx-fixed.conf` 삭제
+- ✅ **불필요한 파일 제거**: `docker-compose.yml`, `docker-compose.simple.yml` 삭제
+- ✅ **환경별 구성 분리**: 개발환경(dev.yml)과 프로덕션환경(prod.yml) 명확히 구분
 - ✅ **스크립트 개선**: 모든 스크립트에 자동 경로 감지 기능 추가
 - ✅ **Docker 구성 최적화**: 헬스체크, 로깅, 의존성 관리 개선
 - ✅ **보안 강화**: .gitignore에 민감한 디렉토리 추가
@@ -162,7 +163,7 @@ docker-compose up -d
 
 #### **주요 개선사항:**
 - 🧠 **자동 경로 감지**: 스크립트 위치에서 프로젝트 루트를 자동으로 찾음
-- ✅ **파일 검증**: docker-compose.yml 존재 여부 확인
+- ✅ **파일 검증**: docker-compose.prod.yml 존재 여부 확인
 - 🛡️ **에러 처리**: 갱신 실패 시 명확한 에러 메시지
 - 🔄 **Nginx 리로드**: 갱신 성공 시 자동 Nginx 리로드
 

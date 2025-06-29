@@ -1,6 +1,10 @@
 import { useBooking } from '../contexts/BookingContext'
 
-const ServicesSection = () => {
+interface ServicesSectionProps {
+  onInquiryClick: () => void
+}
+
+const ServicesSection = ({ onInquiryClick }: ServicesSectionProps) => {
   const { setSelectedService } = useBooking()
 
   // 서비스 이름을 백엔드에서 요구하는 serviceType으로 변환
@@ -158,7 +162,12 @@ const ServicesSection = () => {
               에어컨 2대 이상 청소를 원하시는 경우 별도 상담을 통해 최적의 가격을 제안해드립니다.
             </p>
             <div className="bg-white rounded-lg p-4 inline-block shadow-sm">
-              <p className="text-orange-600 font-semibold">📞 상담 문의: 010-9171-8465</p>
+                              <button 
+                  onClick={onInquiryClick}
+                  className="text-orange-600 font-semibold hover:text-orange-700 transition-colors"
+                >
+                  📞 상담 문의하기
+                </button>
             </div>
           </div>
         </div>

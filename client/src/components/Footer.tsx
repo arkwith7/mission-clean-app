@@ -1,4 +1,9 @@
+import { useState } from 'react'
+import PrivacyPolicyModal from './PrivacyPolicyModal'
+
 const Footer = () => {
+  const [showPrivacyPolicyModal, setShowPrivacyPolicyModal] = useState(false)
+
   return (
     <footer className="bg-gray-900 text-white py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -19,9 +24,17 @@ const Footer = () => {
               </div>
               <div className="flex items-center">
                 <span className="text-blue-400 mr-2">📞</span>
-                <a href="tel:010-9171-8465" className="hover:text-blue-400 transition-colors">
-                  010-9171-8465
-                </a>
+                <button 
+                  onClick={() => {
+                    const contactElement = document.getElementById('contact');
+                    if (contactElement) {
+                      contactElement.scrollIntoView({ behavior: 'smooth' });
+                    }
+                  }}
+                  className="hover:text-blue-400 transition-colors text-left"
+                >
+                  예약문의 (온라인 접수)
+                </button>
               </div>
               <div className="flex items-center">
                 <span className="text-blue-400 mr-2">📧</span>
@@ -135,12 +148,17 @@ const Footer = () => {
             <p className="text-blue-200 mb-4">
               에어컨 고장, 응급 청소가 필요하신가요?
             </p>
-            <a 
-              href="tel:010-9171-8465"
+            <button 
+              onClick={() => {
+                const contactElement = document.getElementById('contact');
+                if (contactElement) {
+                  contactElement.scrollIntoView({ behavior: 'smooth' });
+                }
+              }}
               className="inline-block bg-gradient-to-r from-slate-600 to-slate-700 hover:from-slate-700 hover:to-slate-800 text-white font-bold py-3 px-8 rounded-lg transition-colors"
             >
-              📞 010-9171-8465 즉시 연락
-            </a>
+              📞 예약문의 하기
+            </button>
           </div>
         </div>
 
@@ -149,14 +167,32 @@ const Footer = () => {
           <p className="text-gray-400 text-sm">
             © 2025 Mission Clean. All rights reserved. | 
             대전광역시 중구 동서대로 1435 | 
-            전화: 010-9171-8465 | 
+            온라인 예약 문의 | 
             www.aircleankorea.com
           </p>
+          <div className="flex justify-center items-center space-x-4 mt-3 text-xs">
+            <button
+              onClick={() => setShowPrivacyPolicyModal(true)}
+              className="text-blue-400 hover:text-blue-300 underline transition-colors"
+            >
+              개인정보처리방침
+            </button>
+            <span className="text-gray-500">|</span>
+            <span className="text-gray-500">
+              개인정보보호책임자: info@aircleankorea.com
+            </span>
+          </div>
           <p className="text-gray-500 text-xs mt-2">
             본 웹사이트의 모든 콘텐츠는 저작권법의 보호를 받습니다.
           </p>
         </div>
       </div>
+
+      {/* 개인정보처리방침 모달 */}
+      <PrivacyPolicyModal
+        isOpen={showPrivacyPolicyModal}
+        onClose={() => setShowPrivacyPolicyModal(false)}
+      />
     </footer>
   )
 }

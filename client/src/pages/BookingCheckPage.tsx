@@ -195,12 +195,15 @@ const BookingCheckPage = () => {
                 <p className="text-blue-700 text-sm mb-2">
                   예약 변경이나 추가 문의사항이 있으시면 언제든지 연락주세요.
                 </p>
-                <a 
-                  href="tel:010-9171-8465"
+                <button 
+                  onClick={() => {
+                    window.location.href = '/#contact';
+                    window.location.reload();
+                  }}
                   className="inline-block bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700 transition-colors"
                 >
-                  📞 010-9171-8465
-                </a>
+                  📞 예약문의
+                </button>
               </div>
             </div>
           )}
@@ -211,12 +214,15 @@ const BookingCheckPage = () => {
             <p className="text-blue-700 text-sm">
               예약번호를 잊으셨거나 문제가 있으시면 언제든지 연락주세요.
             </p>
-            <a 
-              href="tel:010-9171-8465"
+            <button 
+              onClick={() => {
+                window.location.href = '/#contact';
+                window.location.reload();
+              }}
               className="inline-block mt-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700 transition-colors"
             >
-              📞 010-9171-8465
-            </a>
+              📞 예약문의
+            </button>
           </div>
         </div>
       </div>

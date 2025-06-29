@@ -1,4 +1,8 @@
-const HeroSection = () => {
+interface HeroSectionProps {
+  onInquiryClick: () => void
+}
+
+const HeroSection = ({ onInquiryClick }: HeroSectionProps) => {
   return (
     <section className="bg-gradient-to-br from-cyan-50 via-sky-50 to-blue-100 pt-12 pb-20 lg:pt-16 lg:pb-28">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -35,25 +39,18 @@ const HeroSection = () => {
 
             {/* CTA Buttons */}
             <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start mb-8">
-              <a 
-                href="tel:010-9171-8465"
+              <button 
+                onClick={onInquiryClick}
                 className="bg-gradient-to-r from-slate-600 to-slate-700 hover:from-slate-700 hover:to-slate-800 text-white px-8 py-5 rounded-xl font-bold text-lg transition-all transform hover:scale-105 shadow-xl hover:shadow-2xl"
               >
-                📞 010-9171-8465 전화 상담
-              </a>
-              <a 
-                href="#contact"
-                className="inline-block bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white px-8 py-5 rounded-xl font-bold text-lg transition-all transform hover:scale-105 shadow-xl hover:shadow-2xl text-center"
-                onClick={(e) => {
-                  e.preventDefault();
-                  const contactElement = document.getElementById('contact');
-                  if (contactElement) {
-                    contactElement.scrollIntoView({ behavior: 'smooth' });
-                  }
-                }}
+                📞 예약문의 하기
+              </button>
+              <button 
+                onClick={onInquiryClick}
+                className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white px-8 py-5 rounded-xl font-bold text-lg transition-all transform hover:scale-105 shadow-xl hover:shadow-2xl"
               >
                 🎯 지금 20% 할인 예약하기
-              </a>
+              </button>
             </div>
 
             {/* Trust Indicators */}

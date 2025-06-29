@@ -1,4 +1,8 @@
-const LocationSection = () => {
+interface LocationSectionProps {
+  onInquiryClick: () => void
+}
+
+const LocationSection = ({ onInquiryClick }: LocationSectionProps) => {
   const serviceAreas = [
     {
       zone: "1차 권역",
@@ -154,15 +158,15 @@ const LocationSection = () => {
             <h3 className="text-2xl font-bold mb-4">지금 바로 상담받으세요!</h3>
             <p className="text-lg mb-6">대전 중구 주민 10% 추가 할인 혜택</p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <a 
-                href="tel:010-9171-8465"
+              <button 
+                onClick={onInquiryClick}
                 className="bg-white text-slate-700 px-8 py-3 rounded-lg font-bold hover:bg-gray-100 transition-colors"
               >
-                📞 010-9171-8465
-              </a>
+                📞 예약문의
+              </button>
               <button 
                 className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white px-8 py-3 rounded-lg font-bold transition-colors"
-                onClick={() => document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })}
+                onClick={onInquiryClick}
               >
                 온라인 예약하기
               </button>
